@@ -130,24 +130,21 @@
       cursor: pointer;
       font-weight: 500;
     }
-    .action-btn.print { background: #3498db; color: white; }
-    .action-btn.print:hover { background: #2980b9; }
-    .action-btn.whatsapp { background: #25D366; color: white; }
-    .action-btn.whatsapp:hover { background: #1ebe56; }
     .action-btn.edit { background: #f39c12; color: white; }
     .action-btn.edit:hover { background: #e67e22; }
-    .qr-code {
-      font-family: 'Courier New', monospace;
-      font-size: 10px;
-      line-height: 1;
+
+    /* تبديل اللغة */
+    .lang-switcher {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
       background: white;
-      padding: 8px;
-      margin: 1rem auto;
-      border: 1px solid #999;
-      direction: ltr;
-      text-align: left;
-      white-space: pre;
-      width: fit-content;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -169,6 +166,7 @@
         <div style="display:flex; align-items:center; margin-bottom:1rem;">
           <div class="logo" style="margin:0;">لوحة التحكم</div>
           <button class="logout-btn" id="logout-btn">خروج</button>
+          <div class="lang-switcher" id="lang-switcher">🌐 عربي</div>
         </div>
 
         <div class="stats-grid">
@@ -226,7 +224,7 @@
                 <th>الحساسية</th>
                 <th>التاريخ</th>
                 <th>الوقت</th>
-                <th>الإجراءات</th>
+                <th>الحالة</th>
               </tr>
             </thead>
             <tbody id="bookings-list">
@@ -239,6 +237,107 @@
   </div>
 
   <script>
+    // ✅ تخزين اللغة في localStorage
+    let currentLang = localStorage.getItem('lang') || 'ar';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('lang', lang);
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lang;
+
+      // تحديث النصوص
+      const texts = {
+        ar: {
+          dashboardTitle: "لوحة التحكم",
+          logout: "خروج",
+          total: "الإجمالي",
+          confirmed: "مؤكّدة",
+          pending: "بانتظار",
+          cancelled: "ملغاة",
+          completed: "منتهية",
+          search: "بحث",
+          export: "تصدير Excel",
+          ref: "الرقم المرجعي",
+          name: "الاسم",
+          allergies: "الحساسية",
+          date: "التاريخ",
+          time: "الوقت",
+          status: "الحالة",
+          edit: "تعديل الحالة",
+          noResults: "لا توجد نتائج",
+          loading: "جارٍ التحميل...",
+          stats: {
+            total: "الإجمالي",
+            confirmed: "مؤكّدة",
+            pending: "بانتظار",
+            cancelled: "ملغاة",
+            completed: "منتهية"
+          }
+        },
+        en: {
+          dashboardTitle: "Dashboard",
+          logout: "Logout",
+          total: "Total",
+          confirmed: "Confirmed",
+          pending: "Pending",
+          cancelled: "Cancelled",
+          completed: "Completed",
+          search: "Search",
+          export: "Export Excel",
+          ref: "Ref #",
+          name: "Name",
+          allergies: "Allergies",
+          date: "Date",
+          time: "Time",
+          status: "Status",
+          edit: "Edit Status",
+          noResults: "No results",
+          loading: "Loading...",
+          stats: {
+            total: "Total",
+            confirmed: "Confirmed",
+            pending: "Pending",
+            cancelled: "Cancelled",
+            completed: "Completed"
+          }
+        }
+      };
+
+      const t = texts[lang];
+
+      document.querySelector('.logo').textContent = t.dashboardTitle;
+      document.querySelector('#logout-btn').textContent = t.logout;
+      document.querySelector('#export-btn').textContent = t.export;
+      document.querySelector('#search-input').placeholder = `${t.search}...`;
+      document.querySelector('#status-filter option[value=""]')?.textContent = t.stats.total;
+      document.querySelector('#status-filter option[value="pending"]')?.textContent = t.stats.pending;
+      document.querySelector('#status-filter option[value="confirmed"]')?.textContent = t.stats.confirmed;
+      document.querySelector('#status-filter option[value="cancelled"]')?.textContent = t.stats.cancelled;
+      document.querySelector('#status-filter option[value="completed"]')?.textContent = t.stats.completed;
+      document.querySelector('#date-filter option[value=""]')?.textContent = t.stats.total;
+      document.querySelector('#date-filter option[value="today"]')?.textContent = "Today";
+      document.querySelector('#date-filter option[value="tomorrow"]')?.textContent = "Tomorrow";
+      document.querySelector('#date-filter option[value="this-week"]')?.textContent = "This Week";
+
+      // تحديث عناوين الجدول
+      document.querySelector('th:nth-child(1)').textContent = t.ref;
+      document.querySelector('th:nth-child(2)').textContent = t.name;
+      document.querySelector('th:nth-child(3)').textContent = t.allergies;
+      document.querySelector('th:nth-child(4)').textContent = t.date;
+      document.querySelector('th:nth-child(5)').textContent = t.time;
+      document.querySelector('th:nth-child(6)').textContent = t.status;
+
+      // تحديث زر اللغة
+      document.getElementById('lang-switcher').textContent = lang === 'ar' ? '🌐 English' : '🌐 عربي';
+    }
+
+    // ✅ تبديل اللغة
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const newLang = currentLang === 'ar' ? 'en' : 'ar';
+      setLanguage(newLang);
+    });
+
     const CORRECT_PIN = "2136";
     const firebaseConfig = {
       apiKey: "AIzaSyAnH3AczYq13NMVA18BhucGzeffEuC5QIM",
@@ -253,174 +352,6 @@
     const db = firebase.database();
 
     let allBookings = [];
-
-    // ✅ QR نصي محسّن (15x15، واضح، قابل للمسح)
-    function generateSimpleQR(data) {
-      const text = `REF:${data.ref}|N:${data.name}|D:${data.date}`;
-      const size = 15;
-      let qr = "";
-      for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-          if (
-            (i < 7 && j < 7) ||
-            (i < 7 && j > size-8) ||
-            (i > size-8 && j < 7)
-          ) {
-            qr += "■";
-          } else if (i === 0 || i === size-1 || j === 0 || j === size-1) {
-            qr += "■";
-          } else {
-            const charIndex = Math.floor((i * size + j) / 3) % text.length;
-            const charCode = text.charCodeAt(charIndex);
-            qr += (charCode % 2 === 0) ? "■" : "□";
-          }
-        }
-        qr += "\n";
-      }
-      return qr;
-    }
-
-    function printBooking(booking) {
-      const win = window.open('', '_blank', 'width=700,height=900');
-      if (!win) {
-        alert("من فضلك سمح للنوافذ المنبثقة وحاول مجددًا.");
-        return;
-      }
-
-      const dateDisplay = booking.dateDisplay || booking.date || '—';
-      const allergies = booking.allergiesDisplay || '—';
-      const statusText = {
-        'pending': '⏳ بانتظار',
-        'confirmed': '✅ مؤكّدة',
-        'cancelled': '❌ ملغاة',
-        'completed': '✔️ منتهية'
-      }[booking.status] || booking.status;
-
-      const qrData = {
-        ref: booking.referenceNumber,
-        name: booking.name,
-        date: booking.date
-      };
-      const qr = generateSimpleQR(qrData);
-
-      win.document.write(`
-        <!DOCTYPE html>
-        <html dir="rtl">
-        <head>
-          <meta charset="UTF-8">
-          <title>تفاصيل الحجز #${booking.referenceNumber}</title>
-          <style>
-            body { font-family: 'Tajawal', sans-serif; padding: 20px; direction: rtl; }
-            .header { text-align: center; margin-bottom: 1rem; }
-            .logo { font-size: 1.8rem; color: #2c3e50; }
-            .logo span { color: #25D366; }
-            .details { line-height: 2; margin-bottom: 1.5rem; }
-            .label { font-weight: bold; color: #2c3e50; }
-            .value { color: #7f8c8d; }
-            .allergy-warning { 
-              background: ${allergies === '—' ? '#f8f9fa' : '#fff3cd'}; 
-              padding: 12px; 
-              border-radius: 8px; 
-              margin: 1rem 0;
-              color: ${allergies === '—' ? '#6c757d' : '#856404'};
-              font-weight: 500;
-            }
-            .qr-code {
-              font-family: 'Courier New', monospace;
-              font-size: 10px;
-              line-height: 1;
-              background: white;
-              padding: 8px;
-              margin: 1rem auto;
-              border: 1px solid #999;
-              direction: ltr;
-              text-align: left;
-              white-space: pre;
-              width: fit-content;
-            }
-            @media print {
-              .no-print { display: none; }
-              body { padding: 0; }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <div class="logo">مطعم<span>ك</span></div>
-            <h2>تفاصيل الحجز</h2>
-          </div>
-          
-          <div class="details">
-            <p><span class="label">الرقم المرجعي:</span> <span class="value">${booking.referenceNumber}</span></p>
-            <p><span class="label">الاسم:</span> <span class="value">${booking.name || '—'}</span></p>
-            <p><span class="label">الجوال:</span> <span class="value">+${booking.phone || '—'}</span></p>
-            <p><span class="label">التاريخ:</span> <span class="value">${dateDisplay}</span></p>
-            <p><span class="label">الوقت:</span> <span class="value">${booking.time || '—'}</span></p>
-            <p><span class="label">عدد الضيوف:</span> <span class="value">${booking.guests || '—'}</span></p>
-            <p><span class="label">الملاحظات:</span> <span class="value">${booking.notes || '—'}</span></p>
-            
-            <div class="allergy-warning">
-              ⚠️ <strong>مسببات الحساسية:</strong> ${allergies}
-            </div>
-            
-            <p><span class="label">الحالة:</span> <span class="value">${statusText}</span></p>
-          </div>
-
-          <div><strong>رمز الاستجابة السريعة (QR):</strong></div>
-          <div class="qr-code">${qr}</div>
-
-          <div class="no-print" style="text-align:center; margin-top:1.5rem;">
-            <button onclick="window.print()" style="padding:10px 20px; background:#2c3e50; color:white; border:none; border-radius:6px; cursor:pointer;">
-              🖨️ طباعة الحجز
-            </button>
-            <button onclick="window.close()" style="margin-right:10px; padding:10px 20px; background:#7f8c8d; color:white; border:none; border-radius:6px; cursor:pointer;">
-              إغلاق
-            </button>
-          </div>
-        </body>
-        </html>
-      `);
-      win.document.close();
-    }
-
-    function exportToCSV() {
-      if (allBookings.length === 0) {
-        alert("لا توجد حجوزات للتصدير.");
-        return;
-      }
-
-      const headers = ["الرقم المرجعي", "الاسم", "الجوال", "التاريخ", "الوقت", "الضيوف", "الحساسية", "الحالة", "الملاحظات"];
-      const rows = allBookings.map(b => [
-        b.referenceNumber,
-        b.name || '',
-        b.phoneDisplay || '',
-        b.dateDisplay || b.date || '',
-        b.time || '',
-        b.guests || '',
-        b.allergiesDisplay || '',
-        {
-          'pending': 'بانتظار',
-          'confirmed': 'مؤكدة',
-          'cancelled': 'ملغاة',
-          'completed': 'منتهية'
-        }[b.status] || b.status,
-        b.notes || ''
-      ]);
-
-      let csvContent = "text/csv;charset=utf-8,\uFEFF";
-      csvContent += headers.join(",") + "\n";
-      csvContent += rows.map(row => 
-        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")
-      ).join("\n");
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `حجوزات_مطعمك_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
 
     function startRealtimeListener() {
       db.ref('bookings').on('value', (snapshot) => {
@@ -466,6 +397,45 @@
     });
 
     document.getElementById('export-btn').addEventListener('click', exportToCSV);
+
+    function exportToCSV() {
+      if (allBookings.length === 0) {
+        alert("لا توجد حجوزات للتصدير.");
+        return;
+      }
+
+      const headers = ["الرقم المرجعي", "الاسم", "الجوال", "التاريخ", "الوقت", "الضيوف", "الحساسية", "الحالة", "الملاحظات"];
+      const rows = allBookings.map(b => [
+        b.referenceNumber,
+        b.name || '',
+        b.phoneDisplay || '',
+        b.dateDisplay || b.date || '',
+        b.time || '',
+        b.guests || '',
+        b.allergiesDisplay || '',
+        {
+          'pending': 'بانتظار',
+          'confirmed': 'مؤكدة',
+          'cancelled': 'ملغاة',
+          'completed': 'منتهية'
+        }[b.status] || b.status,
+        b.notes || ''
+      ]);
+
+      let csvContent = "text/csv;charset=utf-8,\uFEFF";
+      csvContent += headers.join(",") + "\n";
+      csvContent += rows.map(row => 
+        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ).join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `حجوزات_مطعمك_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
 
     function renderStats() {
       const total = allBookings.length;
@@ -541,6 +511,13 @@
       tbody.innerHTML = bookings.map(b => {
         const phoneDisplay = b.phoneDisplay || (b.phone ? b.phone.substring(3) : '—');
         const allergiesTxt = b.allergiesDisplay || '—';
+        const statusClass = b.status;
+        const statusText = {
+          'pending': '⏳ بانتظار',
+          'confirmed': '✅ مؤكّدة',
+          'cancelled': '❌ ملغاة',
+          'completed': '✔️ منتهية'
+        }[b.status] || b.status;
 
         return `
           <tr>
@@ -551,126 +528,50 @@
             </td>
             <td>${b.dateDisplay || b.date || '—'}</td>
             <td>${b.time || '—'}</td>
-            <td style="text-align:left;">
-              <button class="action-btn print" data-id="${b.id}" title="عرض وطباعة الحجز">📄 عرض</button>
-              <button class="action-btn whatsapp" data-phone="${b.phone}" title="مراسلة العميل">💬 واتساب</button>
-              <button class="action-btn edit" data-id="${b.id}" title="تعديل الحجز">✏️ تعديل</button>
+            <td>
+              <select class="status-dropdown" data-id="${b.id}">
+                <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>⏳ بانتظار</option>
+                <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>✅ مؤكّدة</option>
+                <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>❌ ملغاة</option>
+                <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>✔️ منتهية</option>
+              </select>
             </td>
           </tr>`;
       }).join('');
 
-      // ربط أزرار العرض والواتساب والتعديل
-      document.querySelectorAll('.action-btn.print').forEach(btn => {
-        btn.addEventListener('click', function() {
+      // ربط تغيير الحالة
+      document.querySelectorAll('.status-dropdown').forEach(sel => {
+        sel.addEventListener('change', function() {
           const id = this.dataset.id;
-          const booking = allBookings.find(b => b.id === id);
-          if (booking) printBooking(booking);
+          const newStatus = this.value;
+          db.ref(`bookings/${id}/status`).set(newStatus)
+            .then(() => {
+              // تحديث الحالة محليًا
+              const row = this.closest('tr');
+              const newText = {
+                'pending': '⏳ بانتظار',
+                'confirmed': '✅ مؤكّدة',
+                'cancelled': '❌ ملغاة',
+                'completed': '✔️ منتهية'
+              }[newStatus];
+              const badgeCell = row.cells[5];
+              badgeCell.innerHTML = `
+                <select class="status-dropdown" data-id="${id}">
+                  <option value="pending" ${newStatus === 'pending' ? 'selected' : ''}>⏳ بانتظار</option>
+                  <option value="confirmed" ${newStatus === 'confirmed' ? 'selected' : ''}>✅ مؤكّدة</option>
+                  <option value="cancelled" ${newStatus === 'cancelled' ? 'selected' : ''}>❌ ملغاة</option>
+                  <option value="completed" ${newStatus === 'completed' ? 'selected' : ''}>✔️ منتهية</option>
+                </select>`;
+              // إعادة ربط الحدث للقائمة الجديدة
+              badgeCell.querySelector('.status-dropdown').addEventListener('change', arguments.callee);
+              
+              renderStats(); // تحديث العدادات
+            })
+            .catch(err => {
+              console.error("فشل التحديث:", err);
+              alert("❌ فشل تحديث الحالة. تحقق من الاتصال.");
+            });
         });
-      });
-
-      document.querySelectorAll('.action-btn.whatsapp').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const phone = this.dataset.phone;
-          if (phone) {
-            window.open(`https://wa.me/${phone}`, '_blank');
-          }
-        });
-      });
-
-      document.querySelectorAll('.action-btn.edit').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const id = this.dataset.id;
-          const booking = allBookings.find(b => b.id === id);
-          if (booking) {
-            showEditModal(booking);
-          }
-        });
-      });
-    }
-
-    // ✅ نافذة تعديل الحجز
-    function showEditModal(booking) {
-      const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: 20px;
-      `;
-      modal.innerHTML = `
-        <div style="background: white; border-radius: 12px; padding: 20px; width: 100%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
-          <h2 style="text-align:center; margin-bottom:1rem;">✏️ تعديل الحجز #${booking.referenceNumber}</h2>
-          <div style="display:grid; gap:12px; margin-bottom:1rem;">
-            <label>الاسم:</label>
-            <input type="text" id="edit-name" value="${booking.name || ''}" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
-            <label>رقم الجوال:</label>
-            <input type="text" id="edit-phone" value="${booking.phoneDisplay || ''}" style="padding:10px; border:1px solid #ddd; border-radius:8px;" placeholder="05XXXXXXXX">
-            <label>عدد الضيوف:</label>
-            <input type="number" id="edit-guests" value="${booking.guests || 2}" min="1" max="20" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
-            <label>الملاحظات:</label>
-            <textarea id="edit-notes" style="padding:10px; border:1px solid #ddd; border-radius:8px; height:80px;">${booking.notes || ''}</textarea>
-            <label>الحالة:</label>
-            <select id="edit-status" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
-              <option value="pending" ${booking.status === 'pending' ? 'selected' : ''}>⏳ بانتظار</option>
-              <option value="confirmed" ${booking.status === 'confirmed' ? 'selected' : ''}>✅ مؤكّدة</option>
-              <option value="cancelled" ${booking.status === 'cancelled' ? 'selected' : ''}>❌ ملغاة</option>
-              <option value="completed" ${booking.status === 'completed' ? 'selected' : ''}>✔️ منتهية</option>
-            </select>
-          </div>
-          <div style="display:flex; justify-content:space-between; gap:10px;">
-            <button id="save-edit-btn" style="flex:1; padding:10px; background:#2c3e50; color:white; border:none; border-radius:8px; cursor:pointer;">
-              حفظ التعديلات
-            </button>
-            <button id="cancel-edit-btn" style="flex:1; padding:10px; background:#7f8c8d; color:white; border:none; border-radius:8px; cursor:pointer;">
-              إلغاء
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-
-      document.getElementById('cancel-edit-btn').addEventListener('click', () => {
-        document.body.removeChild(modal);
-      });
-
-      document.getElementById('save-edit-btn').addEventListener('click', async () => {
-        const name = document.getElementById('edit-name').value.trim();
-        const phoneDisplay = document.getElementById('edit-phone').value.trim();
-        const guests = document.getElementById('edit-guests').value;
-        const notes = document.getElementById('edit-notes').value.trim();
-        const status = document.getElementById('edit-status').value;
-
-        if (!name || !phoneDisplay || !/^05\d{8}$/.test(phoneDisplay)) {
-          alert("يرجى ملء الحقول الأساسية صحيحة.");
-          return;
-        }
-
-        const phoneFull = "966" + phoneDisplay.substring(1);
-
-        try {
-          await db.ref(`bookings/${booking.id}`).update({
-            name,
-            phone: phoneFull,
-            phoneDisplay,
-            guests: parseInt(guests),
-            notes,
-            status
-          });
-
-          document.body.removeChild(modal);
-          renderTable(allBookings); // تحديث الجدول
-          renderStats(); // تحديث العدادات
-        } catch (err) {
-          console.error(err);
-          alert("❌ فشل تعديل الحجز. تحقق من الاتصال.");
-        }
       });
     }
 
@@ -678,6 +579,8 @@
     document.getElementById('status-filter').addEventListener('change', applyFilters);
     document.getElementById('date-filter').addEventListener('change', applyFilters);
 
+    // تحميل اللغة عند بدء التشغيل
+    setLanguage(currentLang);
     checkSession();
   </script>
 </body>
