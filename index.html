@@ -125,11 +125,6 @@
       color: white;
       border-color: #2980b9;
     }
-    .time-btn.disabled {
-      background: #f8d7da;
-      color: #721c24;
-      cursor: not-allowed;
-    }
     /* شاشة التأكيد */
     #confirmation-screen { display: none; }
     .confirmation-card {
@@ -143,18 +138,20 @@
     }
     .booking-id {
       background: #f8f9fa;
-      padding: 12px;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 1.2rem;
-      letter-spacing: 2px;
+      padding: 16px;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 1.5rem;
+      letter-spacing: 4px;
       margin: 1rem 0;
       direction: ltr;
+      font-weight: bold;
+      color: #2c3e50;
     }
     .summary-item {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 10px 0;
       border-bottom: 1px dashed #eee;
     }
     .summary-label { font-weight: 500; color: #2c3e50; }
@@ -166,6 +163,7 @@
       margin-top: 1.5rem;
       font-weight: 500;
       color: #0d47a1;
+      text-align: center;
     }
   </style>
 </head>
@@ -215,7 +213,7 @@
       <div class="confirmation-card">
         <div class="confirmation-icon">🎉</div>
         <h2>تم الحجز بنجاح!</h2>
-        <p style="color:#7f8c8d;">يرجى حفظ هذه المعلومات</p>
+        <p style="color:#7f8c8d;">يرجى حفظ الرقم المرجعي</p>
         
         <div class="booking-id" id="conf-id">—</div>
         
@@ -239,7 +237,8 @@
         </div>
 
         <div class="instructions">
-          📸 يُرجى تصوير هذه الشاشة وإبرازها لموظف الاستقبال عند الوصول
+          📸 يُرجى تصوير هذه الشاشة أو حفظ الرقم المرجعي (7 أرقام) <br>
+          وإبرازه لموظف الاستقبال عند الوصول
         </div>
 
         <button id="new-booking-btn" class="btn" style="margin-top:1.5rem; background:#7f8c8d;">
@@ -264,6 +263,20 @@
 
     let selectedDate = null;
     let selectedTime = null;
+
+    // ✅ توليد أوقات من 13:00 إلى 01:00 (24 فترة، كل 30 دقيقة)
+    function generateTimeSlots() {
+      const times = [];
+      // من 13:00 إلى 23:30
+      for (let h = 13; h <= 23; h++) {
+        times.push(`${String(h).padStart(2, '0')}:00`);
+        times.push(`${String(h).padStart(2, '0')}:30`);
+      }
+      // منتصف الليل وساعة الفجر
+      times.push('00:00', '00:30', '01:00');
+      return times;
+    }
+    const AVAILABLE_TIMES = generateTimeSlots(); // 24 عنصرًا
 
     // توليد التواريخ (اليوم + 6 أيام)
     function generateDates() {
@@ -298,9 +311,6 @@
       document.getElementById('submit-btn').disabled = !(selectedDate && selectedTime);
     }
 
-    // الأوقات المتاحة (قابلة للتخصيص)
-    unction generateTimeSlots() {   const times = [];   // من الساعة 13:00 إلى 23:30 (11 ساعة × 2 = 22 فترة)   for (let h = 13; h <= 23; h++) {     times.push(`${String(h).padStart(2, '0')}:00`);     times.push(`${String(h).padStart(2, '0')}:30`);   }   // إضافة منتصف الليل وساعة الفجر   times.push('00:00', '00:30', '01:00');   return times; } const AVAILABLE_TIMES = generateTimeSlots(); // 24 فترة
-
     function generateTimes() {
       const grid = document.getElementById('times-grid');
       grid.innerHTML = '';
@@ -312,7 +322,6 @@
         btn.textContent = time;
         btn.dataset.time = time;
         btn.addEventListener('click', () => selectTime(time, btn));
-        // لاحقًا: تحقق من التوفر الحقيقي عبر Firebase
         grid.appendChild(btn);
       });
     }
@@ -322,6 +331,11 @@
       element.classList.add('selected');
       selectedTime = time;
       document.getElementById('submit-btn').disabled = !(selectedDate && selectedTime);
+    }
+
+    // ✅ توليد رقم مرجعي عشوائي من 7 أرقام
+    function generateReferenceNumber() {
+      return Math.floor(1000000 + Math.random() * 9000000); // من 1000000 إلى 9999999
     }
 
     // معالجة الحجز
@@ -344,6 +358,9 @@
         month: 'long',
         day: 'numeric'
       });
+      
+      // ✅ توليد الرقم المرجعي (7 أرقام فقط)
+      const referenceNumber = generateReferenceNumber();
 
       try {
         const newRef = db.ref('bookings').push();
@@ -351,6 +368,7 @@
 
         await newRef.set({
           id: bookingId,
+          referenceNumber: referenceNumber, // ⬅️ الرقم المرجعي المطلوب
           name,
           phone: phoneFull,
           phoneDisplay: phoneInput,
@@ -364,7 +382,7 @@
         });
 
         // إظهار شاشة التأكيد
-        document.getElementById('conf-id').textContent = bookingId;
+        document.getElementById('conf-id').textContent = referenceNumber;
         document.getElementById('conf-name').textContent = name;
         document.getElementById('conf-date').textContent = dateDisplay;
         document.getElementById('conf-time').textContent = selectedTime;
