@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <!-- مكتبة jsQR غير مطلوبة — سنستخدم QR نصي بسيط -->
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -74,6 +75,21 @@
     }
     .search-box { flex: 1; min-width: 200px; }
 
+    /* زر التصدير */
+    .export-btn {
+      background: #27ae60;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .export-btn:hover { background: #219653; }
+
     .table-container { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th {
@@ -135,6 +151,20 @@
     .action-btn.print:hover { background: #2980b9; }
     .action-btn.whatsapp { background: #25D366; color: white; }
     .action-btn.whatsapp:hover { background: #1ebe56; }
+    /* QR في الطباعة */
+    .qr-code {
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      line-height: 1;
+      background: white;
+      padding: 12px;
+      margin: 1rem 0;
+      border: 1px dashed #ccc;
+      direction: ltr;
+      text-align: center;
+      white-space: pre;
+      overflow-x: auto;
+    }
   </style>
 </head>
 <body>
@@ -195,6 +225,12 @@
             <option value="tomorrow">غدًا</option>
             <option value="this-week">هذا الأسبوع</option>
           </select>
+          <button id="export-btn" class="export-btn">
+            <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            تصدير Excel
+          </button>
         </div>
 
         <div class="table-container">
@@ -234,9 +270,29 @@
 
     let allBookings = [];
 
-    // ✅ دالة عرض وطباعة الحجز
+    // ✅ دالة إنشاء QR نصي بسيط (بدون مكتبات)
+    function generateSimpleQR(data) {
+      // رؤوس QR نصي مبسط — يحتوي على: REF#4829105|NAME#أحمد|DATE#2025-06-15
+      const lines = [];
+      const width = 33;
+      // إطارات
+      lines.push("■".repeat(width));
+      lines.push("■" + " ".repeat(width-2) + "■");
+      // البيانات
+      const content = `REF#${data.ref}|NAME#${data.name}|DATE#${data.date}`;
+      const chunks = content.match(/.{1,31}/g) || [content];
+      chunks.forEach(chunk => {
+        const pad = width - 2 - chunk.length;
+        lines.push("■" + chunk + " ".repeat(pad) + "■");
+      });
+      lines.push("■" + " ".repeat(width-2) + "■");
+      lines.push("■".repeat(width));
+      return lines.join("\n");
+    }
+
+    // ✅ دالة عرض وطباعة الحجز (مع QR)
     function printBooking(booking) {
-      const win = window.open('', '_blank', 'width=600,height=800');
+      const win = window.open('', '_blank', 'width=700,height=900');
       if (!win) {
         alert("من فضلك سمح للنوافذ المنبثقة وحاول مجددًا.");
         return;
@@ -251,6 +307,14 @@
         'completed': '✔️ منتهية'
       }[booking.status] || booking.status;
 
+      // ✅ إنشاء QR مبسط
+      const qrData = {
+        ref: booking.referenceNumber,
+        name: booking.name,
+        date: booking.date
+      };
+      const qr = generateSimpleQR(qrData);
+
       win.document.write(`
         <!DOCTYPE html>
         <html dir="rtl">
@@ -259,10 +323,10 @@
           <title>تفاصيل الحجز #${booking.referenceNumber}</title>
           <style>
             body { font-family: 'Tajawal', sans-serif; padding: 20px; direction: rtl; }
-            .header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #eee; }
+            .header { text-align: center; margin-bottom: 1rem; }
             .logo { font-size: 1.8rem; color: #2c3e50; }
             .logo span { color: #25D366; }
-            .details { line-height: 2; }
+            .details { line-height: 2; margin-bottom: 1.5rem; }
             .label { font-weight: bold; color: #2c3e50; }
             .value { color: #7f8c8d; }
             .allergy-warning { 
@@ -273,8 +337,22 @@
               color: ${allergies === 'لا يوجد' ? '#155724' : '#856404'};
               font-weight: 500;
             }
+            .qr-code {
+              font-family: 'Courier New', monospace;
+              font-size: 10px;
+              line-height: 1;
+              background: white;
+              padding: 12px;
+              margin: 1rem 0;
+              border: 1px dashed #ccc;
+              direction: ltr;
+              text-align: center;
+              white-space: pre;
+              overflow-x: auto;
+            }
             @media print {
               .no-print { display: none; }
+              body { padding: 0; }
             }
           </style>
         </head>
@@ -299,8 +377,10 @@
             
             <p><span class="label">الحالة:</span> <span class="value">${statusText}</span></p>
           </div>
-          
-          <div class="no-print" style="text-align:center; margin-top:2rem;">
+
+          <div class="qr-code">${qr}</div>
+
+          <div class="no-print" style="text-align:center; margin-top:1.5rem;">
             <button onclick="window.print()" style="padding:10px 20px; background:#2c3e50; color:white; border:none; border-radius:6px; cursor:pointer;">
               🖨️ طباعة الحجز
             </button>
@@ -312,6 +392,46 @@
         </html>
       `);
       win.document.close();
+    }
+
+    // ✅ دالة تصدير إلى CSV
+    function exportToCSV() {
+      if (allBookings.length === 0) {
+        alert("لا توجد حجوزات للتصدير.");
+        return;
+      }
+
+      const headers = ["الرقم المرجعي", "الاسم", "الجوال", "التاريخ", "الوقت", "الضيوف", "الحساسية", "الحالة", "الملاحظات"];
+      const rows = allBookings.map(b => [
+        b.referenceNumber,
+        b.name || '',
+        b.phoneDisplay || '',
+        b.dateDisplay || b.date || '',
+        b.time || '',
+        b.guests || '',
+        b.allergiesDisplay || '',
+        {
+          'pending': 'بانتظار',
+          'confirmed': 'مؤكدة',
+          'cancelled': 'ملغاة',
+          'completed': 'منتهية'
+        }[b.status] || b.status,
+        b.notes || ''
+      ]);
+
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+      csvContent += headers.join(",") + "\n";
+      csvContent += rows.map(row => 
+        row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ).join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `حجوزات_مطعمك_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function startRealtimeListener() {
@@ -356,6 +476,8 @@
       sessionStorage.removeItem('adminLoggedIn');
       checkSession();
     });
+
+    document.getElementById('export-btn').addEventListener('click', exportToCSV);
 
     function renderStats() {
       const total = allBookings.length;
@@ -448,7 +570,7 @@
           </tr>`;
       }).join('');
 
-      // ✅ ربط أزرار العرض والواتساب
+      // ربط أزرار العرض والواتساب
       document.querySelectorAll('.action-btn.print').forEach(btn => {
         btn.addEventListener('click', function() {
           const id = this.dataset.id;
@@ -463,17 +585,6 @@
           if (phone) {
             window.open(`https://wa.me/${phone}`, '_blank');
           }
-        });
-      });
-
-      // ✅ ربط قائمة تعديل الحالة (إذا أعدت إضافتها لاحقًا)
-      document.querySelectorAll('.status-dropdown').forEach(sel => {
-        sel.addEventListener('change', function() {
-          const id = this.dataset.id;
-          const newStatus = this.value;
-          db.ref(`bookings/${id}/status`).set(newStatus)
-            .then(() => renderStats())
-            .catch(err => console.error("فشل التحديث:", err));
         });
       });
     }
