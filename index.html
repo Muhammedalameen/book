@@ -59,6 +59,8 @@
     .btn-new:hover { background: #219653; transform: translateY(-2px); }
     .btn-check { background: #3498db; color: white; }
     .btn-check:hover { background: #2980b9; transform: translateY(-2px); }
+    .btn-admin { background: #3498db; color: white; }
+    .btn-admin:hover { background: #2980b9; }
     .btn-back { background: #7f8c8d; color: white; margin-top: 1rem; }
     .btn-back:hover { background: #6c7a7a; }
     
@@ -283,6 +285,10 @@
       </p>
       <button id="btn-new-booking" class="btn-choice btn-new">➕ حجز جديد</button>
       <button id="btn-check-booking" class="btn-choice btn-check">🔍 مراجعة حجز سابق</button>
+      <!-- ✅ زر لوحة التحكم مضافة في الشاشة الرئيسية فقط -->
+      <button id="btn-admin-panel" class="btn-choice btn-admin">
+        🔐 الدخول إلى لوحة التحكم
+      </button>
     </div>
 
     <div id="booking-form" class="card">
@@ -447,6 +453,7 @@
           whatToDo: "ما الذي ترغب في فعله اليوم؟",
           newBooking: "➕ حجز جديد",
           checkBooking: "🔍 مراجعة حجز سابق",
+          adminPanel: "🔐 الدخول إلى لوحة التحكم",
           bookingFormTitle: "📅 حجز طاولة جديدة",
           dateLabel: "التاريخ المتاح",
           timeLabel: "الوقت المتاح",
@@ -480,8 +487,6 @@
           cancelled: "❌ ملغاة",
           completed: "✔️ منتهية",
           print: "📄 عرض",
-          whatsapp: "💬 واتساب",
-          edit: "✏️ تعديل",
           addCalendar: "🗓️ إضافة للتقويم",
           contactUs: "💬 تواصل معنا",
           location: "📍 موقع المطعم",
@@ -492,6 +497,7 @@
           whatToDo: "What would you like to do today?",
           newBooking: "➕ New Booking",
           checkBooking: "🔍 Review Previous Booking",
+          adminPanel: "🔐 Admin Panel",
           bookingFormTitle: "📅 Book a Table",
           dateLabel: "Available Date",
           timeLabel: "Available Time",
@@ -525,8 +531,6 @@
           cancelled: "❌ Cancelled",
           completed: "✔️ Completed",
           print: "📄 View",
-          whatsapp: "💬 WhatsApp",
-          edit: "✏️ Edit",
           addCalendar: "🗓️ Add to Calendar",
           contactUs: "💬 Contact Us",
           location: "📍 Restaurant Location",
@@ -539,6 +543,7 @@
       document.querySelector('.welcome-title').textContent = t.welcomeTitle;
       document.querySelector('#btn-new-booking').textContent = t.newBooking;
       document.querySelector('#btn-check-booking').textContent = t.checkBooking;
+      document.querySelector('#btn-admin-panel').textContent = t.adminPanel;
       document.querySelector('.form-title').textContent = t.bookingFormTitle;
       document.querySelector('label[for="name"]').textContent = t.nameLabel;
       document.querySelector('label[for="phone"]').textContent = t.phoneLabel;
@@ -604,6 +609,11 @@
       document.querySelectorAll('.card').forEach(el => el.classList.remove('active'));
       document.getElementById(id).classList.add('active');
     }
+
+    // ✅ ربط زر لوحة التحكم
+    document.getElementById('btn-admin-panel').addEventListener('click', () => {
+      window.location.href = 'admin.html';
+    });
 
     document.getElementById('btn-new-booking').addEventListener('click', () => {
       showScreen('booking-form');
