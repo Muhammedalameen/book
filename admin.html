@@ -116,13 +116,25 @@
       background: none; border: none; color: #e74c3c; 
       font-weight: 500; cursor: pointer; margin-left: auto;
     }
-    /* تحسين عرض الرقم المرجعي */
     .ref-number {
       font-family: 'Courier New', monospace;
       font-weight: bold;
       direction: ltr;
       font-size: 1.1rem;
     }
+    .action-btn {
+      padding: 6px 10px;
+      margin: 2px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .action-btn.print { background: #3498db; color: white; }
+    .action-btn.print:hover { background: #2980b9; }
+    .action-btn.whatsapp { background: #25D366; color: white; }
+    .action-btn.whatsapp:hover { background: #1ebe56; }
   </style>
 </head>
 <body>
@@ -190,17 +202,15 @@
             <thead>
               <tr>
                 <th>الرقم المرجعي</th>
-                <th>المعرف</th>
                 <th>الاسم</th>
-                <th>الجوال</th>
+                <th>الحساسية</th>
                 <th>التاريخ</th>
                 <th>الوقت</th>
-                <th>الضيوف</th>
-                <th>الحالة</th>
+                <th>الإجراءات</th>
               </tr>
             </thead>
             <tbody id="bookings-list">
-              <tr><td colspan="8" class="empty-state">جارٍ التحميل...</td></tr>
+              <tr><td colspan="6" class="empty-state">جارٍ التحميل...</td></tr>
             </tbody>
           </table>
         </div>
@@ -224,14 +234,92 @@
 
     let allBookings = [];
 
-    // ✅ تشغيل الاستماع الفوري (بدون إعادة تحميل)
+    // ✅ دالة عرض وطباعة الحجز
+    function printBooking(booking) {
+      const win = window.open('', '_blank', 'width=600,height=800');
+      if (!win) {
+        alert("من فضلك سمح للنوافذ المنبثقة وحاول مجددًا.");
+        return;
+      }
+
+      const dateDisplay = booking.dateDisplay || booking.date || '—';
+      const allergies = booking.allergiesDisplay || (Array.isArray(booking.allergies) ? booking.allergies.join('، ') : '—');
+      const statusText = {
+        'pending': '⏳ بانتظار',
+        'confirmed': '✅ مؤكّدة',
+        'cancelled': '❌ ملغاة',
+        'completed': '✔️ منتهية'
+      }[booking.status] || booking.status;
+
+      win.document.write(`
+        <!DOCTYPE html>
+        <html dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <title>تفاصيل الحجز #${booking.referenceNumber}</title>
+          <style>
+            body { font-family: 'Tajawal', sans-serif; padding: 20px; direction: rtl; }
+            .header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #eee; }
+            .logo { font-size: 1.8rem; color: #2c3e50; }
+            .logo span { color: #25D366; }
+            .details { line-height: 2; }
+            .label { font-weight: bold; color: #2c3e50; }
+            .value { color: #7f8c8d; }
+            .allergy-warning { 
+              background: ${allergies === 'لا يوجد' ? '#d4edda' : '#fff3cd'}; 
+              padding: 12px; 
+              border-radius: 8px; 
+              margin: 1rem 0;
+              color: ${allergies === 'لا يوجد' ? '#155724' : '#856404'};
+              font-weight: 500;
+            }
+            @media print {
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo">مطعم<span>ك</span></div>
+            <h2>تفاصيل الحجز</h2>
+          </div>
+          
+          <div class="details">
+            <p><span class="label">الرقم المرجعي:</span> <span class="value">${booking.referenceNumber}</span></p>
+            <p><span class="label">الاسم:</span> <span class="value">${booking.name || '—'}</span></p>
+            <p><span class="label">الجوال:</span> <span class="value">+${booking.phone || '—'}</span></p>
+            <p><span class="label">التاريخ:</span> <span class="value">${dateDisplay}</span></p>
+            <p><span class="label">الوقت:</span> <span class="value">${booking.time || '—'}</span></p>
+            <p><span class="label">عدد الضيوف:</span> <span class="value">${booking.guests || '—'}</span></p>
+            <p><span class="label">الملاحظات:</span> <span class="value">${booking.notes || '—'}</span></p>
+            
+            <div class="allergy-warning">
+              ⚠️ <strong>مسببات الحساسية:</strong> ${allergies}
+            </div>
+            
+            <p><span class="label">الحالة:</span> <span class="value">${statusText}</span></p>
+          </div>
+          
+          <div class="no-print" style="text-align:center; margin-top:2rem;">
+            <button onclick="window.print()" style="padding:10px 20px; background:#2c3e50; color:white; border:none; border-radius:6px; cursor:pointer;">
+              🖨️ طباعة الحجز
+            </button>
+            <button onclick="window.close()" style="margin-right:10px; padding:10px 20px; background:#7f8c8d; color:white; border:none; border-radius:6px; cursor:pointer;">
+              إغلاق
+            </button>
+          </div>
+        </body>
+        </html>
+      `);
+      win.document.close();
+    }
+
     function startRealtimeListener() {
       db.ref('bookings').on('value', (snapshot) => {
         allBookings = [];
         snapshot.forEach(child => {
           const b = child.val();
           if (!b.status) b.status = 'pending';
-          // ضمان وجود referenceNumber (للحجوزات القديمة)
           if (b.referenceNumber === undefined || b.referenceNumber === null) {
             b.referenceNumber = '—';
           }
@@ -247,7 +335,7 @@
       if (sessionStorage.getItem('adminLoggedIn') === 'true') {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
-        startRealtimeListener(); // ✅ التشغيل هنا
+        startRealtimeListener();
       } else {
         document.getElementById('login-screen').style.display = 'block';
         document.getElementById('dashboard').style.display = 'none';
@@ -336,84 +424,64 @@
     function renderTable(bookings) {
       const tbody = document.getElementById('bookings-list');
       if (bookings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="empty-state">📭 لا توجد نتائج</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">📭 لا توجد نتائج</td></tr>`;
         return;
       }
 
       tbody.innerHTML = bookings.map(b => {
         const phoneDisplay = b.phoneDisplay || (b.phone ? b.phone.substring(3) : '—');
-        const statusClass = b.status;
-        const statusText = {
-          'pending': '⏳ بانتظار',
-          'confirmed': '✅ مؤكّدة',
-          'cancelled': '❌ ملغاة',
-          'completed': '✔️ منتهية'
-        }[b.status] || b.status;
+        const allergiesTxt = b.allergiesDisplay || (Array.isArray(b.allergies) ? b.allergies.join('، ') : '—');
 
         return `
           <tr>
             <td><span class="ref-number">${b.referenceNumber}</span></td>
-            <td><code>${b.id?.substring(0,6) || '—'}</code></td>
             <td>${b.name || '—'}</td>
-            <td dir="ltr">${phoneDisplay}</td>
+            <td style="color:${allergiesTxt === 'لا يوجد' ? '#27ae60' : '#e74c3c'}; font-weight:${allergiesTxt === 'لا يوجد' ? 'normal' : 'bold'};">
+              ${allergiesTxt}
+            </td>
             <td>${b.dateDisplay || b.date || '—'}</td>
             <td>${b.time || '—'}</td>
-            <td>${b.guests || '—'}</td>
-            <td>
-              <select class="status-dropdown" data-id="${b.id}">
-                <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>⏳ بانتظار</option>
-                <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>✅ مؤكّدة</option>
-                <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>❌ ملغاة</option>
-                <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>✔️ منتهية</option>
-              </select>
+            <td style="text-align:left;">
+              <button class="action-btn print" data-id="${b.id}" title="عرض وطباعة الحجز">📄 عرض</button>
+              <button class="action-btn whatsapp" data-phone="${b.phone}" title="مراسلة العميل">💬 واتساب</button>
             </td>
           </tr>`;
       }).join('');
 
-      // ✅ ربط التحديث الفوري (بدون إعادة تحميل)
+      // ✅ ربط أزرار العرض والواتساب
+      document.querySelectorAll('.action-btn.print').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const id = this.dataset.id;
+          const booking = allBookings.find(b => b.id === id);
+          if (booking) printBooking(booking);
+        });
+      });
+
+      document.querySelectorAll('.action-btn.whatsapp').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const phone = this.dataset.phone;
+          if (phone) {
+            window.open(`https://wa.me/${phone}`, '_blank');
+          }
+        });
+      });
+
+      // ✅ ربط قائمة تعديل الحالة (إذا أعدت إضافتها لاحقًا)
       document.querySelectorAll('.status-dropdown').forEach(sel => {
         sel.addEventListener('change', function() {
           const id = this.dataset.id;
           const newStatus = this.value;
-          
-          // تحديث Firebase
           db.ref(`bookings/${id}/status`).set(newStatus)
-            .then(() => {
-              // ✅ تحديث الحالة محليًا في الجدول مباشرةً
-              const row = this.closest('tr');
-              const newText = {
-                'pending': '⏳ بانتظار',
-                'confirmed': '✅ مؤكّدة',
-                'cancelled': '❌ ملغاة',
-                'completed': '✔️ منتهية'
-              }[newStatus];
-              const badgeCell = row.cells[7];
-              badgeCell.innerHTML = `
-                <select class="status-dropdown" data-id="${id}">
-                  <option value="pending" ${newStatus === 'pending' ? 'selected' : ''}>⏳ بانتظار</option>
-                  <option value="confirmed" ${newStatus === 'confirmed' ? 'selected' : ''}>✅ مؤكّدة</option>
-                  <option value="cancelled" ${newStatus === 'cancelled' ? 'selected' : ''}>❌ ملغاة</option>
-                  <option value="completed" ${newStatus === 'completed' ? 'selected' : ''}>✔️ منتهية</option>
-                </select>`;
-              // إعادة ربط الحدث للقائمة الجديدة
-              badgeCell.querySelector('.status-dropdown').addEventListener('change', arguments.callee);
-              
-              renderStats(); // تحديث العدادات
-            })
-            .catch(err => {
-              console.error("فشل التحديث:", err);
-              alert("❌ فشل تحديث الحالة. تحقق من الاتصال.");
-            });
+            .then(() => renderStats())
+            .catch(err => console.error("فشل التحديث:", err));
         });
       });
     }
 
-    // ربط أحداث التحكم
     document.getElementById('search-input').addEventListener('input', applyFilters);
     document.getElementById('status-filter').addEventListener('change', applyFilters);
     document.getElementById('date-filter').addEventListener('change', applyFilters);
 
-    // بدء التشغيل
     checkSession();
   </script>
 </body>
