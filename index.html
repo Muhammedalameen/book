@@ -251,10 +251,6 @@
     }
     .action-btn.print { background: #3498db; color: white; }
     .action-btn.print:hover { background: #2980b9; }
-    .action-btn.whatsapp { background: #25D366; color: white; }
-    .action-btn.whatsapp:hover { background: #1ebe56; }
-    .action-btn.edit { background: #f39c12; color: white; }
-    .action-btn.edit:hover { background: #e67e22; }
 
     /* تبديل اللغة */
     .lang-switcher {
@@ -268,21 +264,6 @@
       padding: 6px 12px;
       font-size: 0.9rem;
       cursor: pointer;
-    }
-
-    /* QR */
-    .qr-code {
-      font-family: 'Courier New', monospace;
-      font-size: 10px;
-      line-height: 1;
-      background: white;
-      padding: 8px;
-      margin: 1rem auto;
-      border: 1px solid #999;
-      direction: ltr;
-      text-align: left;
-      white-space: pre;
-      width: fit-content;
     }
   </style>
 </head>
@@ -904,8 +885,6 @@
             <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
             <td>
               <button class="action-btn print" data-id="${b.id}" title="عرض الحجز">📄 عرض</button>
-              <button class="action-btn whatsapp" data-phone="${b.phone}" title="مراسلة العميل">💬 واتساب</button>
-              ${b.status === 'pending' ? `<button class="action-btn edit" data-id="${b.id}" title="تعديل الحجز">✏️ تعديل</button>` : ''}
             </td>
           </tr>
         `;
@@ -916,56 +895,16 @@
       listDiv.innerHTML = tableHtml;
       showScreen('previous-bookings-screen');
 
-      // ربط أزرار الإجراءات
+      // ربط زر "عرض"
       document.querySelectorAll('.action-btn.print').forEach(btn => {
         btn.addEventListener('click', function() {
           const id = this.dataset.id;
           const booking = bookings.find(b => b.id === id);
-          if (booking) showReviewScreen(booking);
-        });
-      });
-
-      document.querySelectorAll('.action-btn.whatsapp').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const phone = this.dataset.phone;
-          if (phone) {
-            window.open(`https://wa.me/${phone}`, '_blank');
-          }
-        });
-      });
-
-      document.querySelectorAll('.action-btn.edit').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const id = this.dataset.id;
-          const booking = bookings.find(b => b.id === id);
           if (booking) {
-            showEditBookingForm(booking);
+            showReviewScreen(booking);
           }
         });
       });
-    }
-
-    function showEditBookingForm(booking) {
-      // إعادة تعبئة النموذج
-      document.getElementById('name').value = booking.name;
-      document.getElementById('phone').value = booking.phoneDisplay;
-      document.getElementById('guests').value = booking.guests;
-      document.getElementById('notes').value = booking.notes;
-
-      // تحديد الحساسية
-      const allergyCheckboxes = document.querySelectorAll('input[name="allergy"]');
-      allergyCheckboxes.forEach(cb => {
-        cb.checked = booking.allergies.includes(cb.value);
-      });
-
-      // اختيار التاريخ والوقت
-      selectedDate = booking.date;
-      selectedTime = booking.time;
-      generateDates();
-      generateTimes();
-
-      // انتقال إلى نموذج الحجز
-      showScreen('booking-form');
     }
 
     document.getElementById('btn-back-to-welcome-from-prev').addEventListener('click', () => showScreen('welcome-screen'));
