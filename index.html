@@ -124,7 +124,7 @@
     .time-btn:hover { background: #e9ecef; }
     .time-btn.selected { background: #3498db; color: white; border-color: #2980b9; }
 
-    /* قسم الحساسية - بدون "لا يوجد" */
+    /* قسم الحساسية */
     .allergy-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -162,7 +162,7 @@
     .allergy-icon.soy { background: #f1f8e9; color: #689f38; }
     .allergy-icon.seafood { background: #e0f7fa; color: #00838f; }
 
-    #welcome-screen, #booking-form, #check-booking-screen, #confirmation-screen, #review-screen {
+    #welcome-screen, #booking-form, #check-booking-screen, #confirmation-screen, #review-screen, #previous-bookings-screen {
       display: none;
     }
     .active { display: block !important; }
@@ -206,10 +206,91 @@
       font-size: 0.9rem;
       min-height: 1.4rem;
     }
+
+    /* جدول الحجوزات السابقة */
+    .prev-bookings-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+    }
+    .prev-bookings-table th {
+      background: #f8f9fa;
+      padding: 10px;
+      text-align: right;
+      font-weight: 600;
+      color: #2c3e50;
+      border-bottom: 2px solid #e9ecef;
+    }
+    .prev-bookings-table td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      vertical-align: middle;
+    }
+    .prev-bookings-table tr:hover { background: #fafafa; }
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-confirmed { background: #d4edda; color: #155724; }
+    .status-cancelled { background: #f8d7da; color: #721c24; }
+    .status-completed { background: #d1ecf1; color: #0c5460; }
+
+    /* أزرار الإجراءات */
+    .action-btn {
+      padding: 6px 10px;
+      margin: 2px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .action-btn.print { background: #3498db; color: white; }
+    .action-btn.print:hover { background: #2980b9; }
+    .action-btn.whatsapp { background: #25D366; color: white; }
+    .action-btn.whatsapp:hover { background: #1ebe56; }
+    .action-btn.edit { background: #f39c12; color: white; }
+    .action-btn.edit:hover { background: #e67e22; }
+
+    /* تبديل اللغة */
+    .lang-switcher {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    /* QR */
+    .qr-code {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      line-height: 1;
+      background: white;
+      padding: 8px;
+      margin: 1rem auto;
+      border: 1px solid #999;
+      direction: ltr;
+      text-align: left;
+      white-space: pre;
+      width: fit-content;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- تبديل اللغة -->
+    <div class="lang-switcher" id="lang-switcher">🌐 عربي</div>
+
     <header>
       <div class="logo">مطعم<span>ك</span></div>
     </header>
@@ -254,7 +335,6 @@
         <textarea id="notes" placeholder="كرسي أطفال، ذكرى خاصة..."></textarea>
       </div>
 
-      <!-- ✅ قسم الحساسية بدون "لا يوجد" -->
       <div class="form-group">
         <label>هل لديك أي حساسية من الطعام؟</label>
         <div class="allergy-grid">
@@ -310,6 +390,12 @@
       <div id="search-result"></div>
     </div>
 
+    <div id="previous-bookings-screen" class="card">
+      <h1 class="form-title">📋 حجوزاتك السابقة</h1>
+      <div id="prev-bookings-list"></div>
+      <button id="btn-back-to-welcome-from-prev" class="btn-choice btn-back">← العودة إلى القائمة</button>
+    </div>
+
     <div id="confirmation-screen" class="card">
       <div class="confirmation-card">
         <div class="confirmation-icon">🎉</div>
@@ -346,12 +432,13 @@
           وإبرازه لموظف الاستقبال عند الوصول
         </div>
 
-        <button id="new-booking-from-confirm" class="btn-choice btn-new" style="margin-top:1.5rem;">
-          حجز جديد
-        </button>
-        <button id="review-booking-btn" class="btn-choice btn-check" style="margin-top:0.5rem;">
-          مراجعة الحجز
-        </button>
+        <div style="display:flex; justify-content:space-around; margin-top:1.5rem; flex-wrap:wrap; gap:10px;">
+          <button id="new-booking-from-confirm" class="btn-choice btn-new">حجز جديد</button>
+          <button id="review-booking-btn" class="btn-choice btn-check">مراجعة الحجز</button>
+          <button id="add-to-calendar-btn" class="btn-choice" style="background:#e74c3c; color:white;">🗓️ إضافة للتقويم</button>
+          <button id="contact-us-btn" class="btn-choice" style="background:#25D366; color:white;">💬 تواصل معنا</button>
+          <button id="location-btn" class="btn-choice" style="background:#3498db; color:white;">📍 موقع المطعم</button>
+        </div>
       </div>
     </div>
 
@@ -363,6 +450,148 @@
   </div>
 
   <script>
+    // ✅ تخزين اللغة في localStorage
+    let currentLang = localStorage.getItem('lang') || 'ar';
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('lang', lang);
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.documentElement.lang = lang;
+
+      // تحديث النصوص
+      const texts = {
+        ar: {
+          welcomeTitle: "مرحبًا بك في مطعمك",
+          whatToDo: "ما الذي ترغب في فعله اليوم؟",
+          newBooking: "➕ حجز جديد",
+          checkBooking: "🔍 مراجعة حجز سابق",
+          bookingFormTitle: "📅 حجز طاولة جديدة",
+          dateLabel: "التاريخ المتاح",
+          timeLabel: "الوقت المتاح",
+          nameLabel: "الاسم الكامل *",
+          phoneLabel: "رقم الجوال (يبدأ بـ 05) *",
+          guestsLabel: "عدد الضيوف",
+          notesLabel: "ملاحظات (اختياري)",
+          allergyLabel: "هل لديك أي حساسية من الطعام؟",
+          gluten: "القمح / الجلوتين",
+          nuts: "المكسرات",
+          dairy: "الحليب / الألبان",
+          eggs: "البيض",
+          soy: "الصويا",
+          seafood: "المأكولات البحرية",
+          submitBtn: "تأكيد الحجز",
+          backBtn: "← العودة إلى القائمة",
+          searchLabel: "أدخل الرقم المرجعي (7 أرقام) أو رقم الجوال (05XXXXXXXX)",
+          searchBtn: "بحث عن الحجز",
+          noResults: "❌ لم يتم العثور على حجز بهذا الرقم.",
+          error: "يرجى ملء جميع الحقول المطلوبة (*)",
+          success: "تم الحجز بنجاح!",
+          ref: "الرقم المرجعي",
+          date: "التاريخ",
+          time: "الوقت",
+          guests: "الضيوف",
+          allergies: "الحساسية",
+          notes: "الملاحظات",
+          status: "الحالة",
+          pending: "⏳ بانتظار التأكيد",
+          confirmed: "✅ مؤكّدة",
+          cancelled: "❌ ملغاة",
+          completed: "✔️ منتهية",
+          print: "📄 عرض",
+          whatsapp: "💬 واتساب",
+          edit: "✏️ تعديل",
+          addCalendar: "🗓️ إضافة للتقويم",
+          contactUs: "💬 تواصل معنا",
+          location: "📍 موقع المطعم",
+          previousBookings: "📋 حجوزاتك السابقة"
+        },
+        en: {
+          welcomeTitle: "Welcome to Our Restaurant",
+          whatToDo: "What would you like to do today?",
+          newBooking: "➕ New Booking",
+          checkBooking: "🔍 Review Previous Booking",
+          bookingFormTitle: "📅 Book a Table",
+          dateLabel: "Available Date",
+          timeLabel: "Available Time",
+          nameLabel: "Full Name *",
+          phoneLabel: "Phone Number (starts with 05) *",
+          guestsLabel: "Number of Guests",
+          notesLabel: "Notes (Optional)",
+          allergyLabel: "Do you have any food allergies?",
+          gluten: "Gluten",
+          nuts: "Nuts",
+          dairy: "Dairy",
+          eggs: "Eggs",
+          soy: "Soy",
+          seafood: "Seafood",
+          submitBtn: "Confirm Booking",
+          backBtn: "← Back to Menu",
+          searchLabel: "Enter Reference Number (7 digits) or Phone (05XXXXXXXX)",
+          searchBtn: "Search Booking",
+          noResults: "❌ No booking found with this number.",
+          error: "Please fill in all required fields (*)",
+          success: "Booking Successful!",
+          ref: "Reference #",
+          date: "Date",
+          time: "Time",
+          guests: "Guests",
+          allergies: "Allergies",
+          notes: "Notes",
+          status: "Status",
+          pending: "⏳ Pending",
+          confirmed: "✅ Confirmed",
+          cancelled: "❌ Cancelled",
+          completed: "✔️ Completed",
+          print: "📄 View",
+          whatsapp: "💬 WhatsApp",
+          edit: "✏️ Edit",
+          addCalendar: "🗓️ Add to Calendar",
+          contactUs: "💬 Contact Us",
+          location: "📍 Restaurant Location",
+          previousBookings: "📋 Your Previous Bookings"
+        }
+      };
+
+      const t = texts[lang];
+
+      document.querySelector('.welcome-title').textContent = t.welcomeTitle;
+      document.querySelector('#btn-new-booking').textContent = t.newBooking;
+      document.querySelector('#btn-check-booking').textContent = t.checkBooking;
+      document.querySelector('.form-title').textContent = t.bookingFormTitle;
+      document.querySelector('label[for="name"]').textContent = t.nameLabel;
+      document.querySelector('label[for="phone"]').textContent = t.phoneLabel;
+      document.querySelector('label[for="guests"]').textContent = t.guestsLabel;
+      document.querySelector('label[for="notes"]').textContent = t.notesLabel;
+      document.querySelector('label[for="search-ref"]').textContent = t.searchLabel;
+      document.querySelector('#search-btn').textContent = t.searchBtn;
+      document.querySelector('#submit-btn').textContent = t.submitBtn;
+      document.querySelector('#btn-back-to-welcome').textContent = t.backBtn;
+      document.querySelector('#btn-back-from-check').textContent = t.backBtn;
+      document.querySelector('#btn-back-to-confirm').textContent = t.backBtn;
+      document.querySelector('#new-booking-from-confirm').textContent = t.newBooking;
+      document.querySelector('#review-booking-btn').textContent = t.reviewBooking;
+      document.querySelector('#add-to-calendar-btn').textContent = t.addCalendar;
+      document.querySelector('#contact-us-btn').textContent = t.contactUs;
+      document.querySelector('#location-btn').textContent = t.location;
+      document.querySelector('#previous-bookings-screen h1').textContent = t.previousBookings;
+
+      // تحديث نصوص الحساسية
+      document.querySelectorAll('.allergy-item span:last-child').forEach((el, i) => {
+        const keys = ['gluten', 'nuts', 'dairy', 'eggs', 'soy', 'seafood'];
+        el.textContent = t[keys[i]];
+      });
+
+      // تحديث زر اللغة
+      document.getElementById('lang-switcher').textContent = lang === 'ar' ? '🌐 English' : '🌐 عربي';
+    }
+
+    // ✅ تبديل اللغة
+    document.getElementById('lang-switcher').addEventListener('click', () => {
+      const newLang = currentLang === 'ar' ? 'en' : 'ar';
+      setLanguage(newLang);
+    });
+
     const firebaseConfig = {
       apiKey: "AIzaSyAnH3AczYq13NMVA18BhucGzeffEuC5QIM",
       authDomain: "table-booking-5d9d4.firebaseapp.com",
@@ -412,7 +641,7 @@
       const grid = document.getElementById('dates-grid');
       grid.innerHTML = '';
       const today = new Date();
-      const formatter = new Intl.DateTimeFormat('ar-SA', { weekday: 'short', day: 'numeric', month: 'short' });
+      const formatter = new Intl.DateTimeFormat(currentLang === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short' });
 
       for (let i = 0; i <= 6; i++) {
         const date = new Date(today);
@@ -486,17 +715,14 @@
         return;
       }
 
-      // ✅ التحقق: 05XXXXXXXX
       if (!/^05\d{8}$/.test(phoneInput)) {
         document.getElementById('form-error').textContent = "يرجى إدخال رقم جوال سعودي صحيح (يبدأ بـ 05، مثال: 0501234567)";
         setTimeout(() => document.getElementById('form-error').textContent = "", 3000);
         return;
       }
 
-      // ✅ التحويل: 05XXX → 9665XXX
       const phoneFull = "966" + phoneInput.substring(1);
 
-      // ✅ جمع الحساسية (بدون "لا يوجد")
       const allergyCheckboxes = document.querySelectorAll('input[name="allergy"]:checked');
       const allergies = [];
       allergyCheckboxes.forEach(cb => allergies.push(cb.value));
@@ -513,7 +739,7 @@
       const allergiesDisplay = allergiesAr.length > 0 ? allergiesAr.join('، ') : '—';
 
       const dateObj = new Date(selectedDate);
-      const dateDisplay = dateObj.toLocaleDateString('ar-SA', {
+      const dateDisplay = dateObj.toLocaleDateString(currentLang === 'ar' ? 'ar-SA' : 'en-US', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
       });
       const referenceNumber = generateReferenceNumber();
@@ -612,27 +838,23 @@
       resultDiv.innerHTML = '<p style="text-align:center;">جارٍ البحث...</p>';
 
       try {
-        let booking = null;
+        let bookings = [];
 
         // بحث بالرقم المرجعي
         if (/^\d{7}$/.test(query)) {
           const snapshot = await db.ref('bookings').orderByChild('referenceNumber').equalTo(parseInt(query)).once('value');
-          if (snapshot.exists()) {
-            snapshot.forEach(child => { booking = child.val(); });
-          }
+          snapshot.forEach(child => { bookings.push(child.val()); });
         }
 
         // بحث برقم الجوال (05XXXXXXXX)
-        if (!booking && /^05\d{8}$/.test(query)) {
+        if (bookings.length === 0 && /^05\d{8}$/.test(query)) {
           const phoneQuery = "966" + query.substring(1);
           const snap2 = await db.ref('bookings').orderByChild('phone').equalTo(phoneQuery).once('value');
-          if (snap2.exists()) {
-            snap2.forEach(child => { booking = child.val(); });
-          }
+          snap2.forEach(child => { bookings.push(child.val()); });
         }
 
-        if (booking) {
-          showReviewScreen(booking);
+        if (bookings.length > 0) {
+          showPreviousBookings(bookings);
         } else {
           resultDiv.innerHTML = `<p style="color:#e74c3c; text-align:center;">❌ لم يتم العثور على حجز بهذا الرقم.</p>`;
           setTimeout(() => resultDiv.innerHTML = "", 3000);
@@ -641,6 +863,152 @@
         console.error(err);
         resultDiv.innerHTML = `<p style="color:#e74c3c; text-align:center;">❌ خطأ في البحث. تحقق من الاتصال.</p>`;
       }
+    });
+
+    function showPreviousBookings(bookings) {
+      const listDiv = document.getElementById('prev-bookings-list');
+      if (bookings.length === 0) {
+        listDiv.innerHTML = `<p style="text-align:center; color:#7f8c8d;">لم يتم العثور على حجوزات سابقة.</p>`;
+        showScreen('previous-bookings-screen');
+        return;
+      }
+
+      let tableHtml = `
+        <table class="prev-bookings-table">
+          <thead>
+            <tr>
+              <th>الرقم المرجعي</th>
+              <th>التاريخ</th>
+              <th>الوقت</th>
+              <th>الحالة</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      bookings.forEach(b => {
+        const statusClass = b.status;
+        const statusText = {
+          'pending': '⏳ بانتظار',
+          'confirmed': '✅ مؤكّدة',
+          'cancelled': '❌ ملغاة',
+          'completed': '✔️ منتهية'
+        }[b.status] || b.status;
+
+        tableHtml += `
+          <tr>
+            <td>${b.referenceNumber}</td>
+            <td>${b.dateDisplay || b.date || '—'}</td>
+            <td>${b.time || '—'}</td>
+            <td><span class="status-badge status-${statusClass}">${statusText}</span></td>
+            <td>
+              <button class="action-btn print" data-id="${b.id}" title="عرض الحجز">📄 عرض</button>
+              <button class="action-btn whatsapp" data-phone="${b.phone}" title="مراسلة العميل">💬 واتساب</button>
+              ${b.status === 'pending' ? `<button class="action-btn edit" data-id="${b.id}" title="تعديل الحجز">✏️ تعديل</button>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `</tbody></table>`;
+
+      listDiv.innerHTML = tableHtml;
+      showScreen('previous-bookings-screen');
+
+      // ربط أزرار الإجراءات
+      document.querySelectorAll('.action-btn.print').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const id = this.dataset.id;
+          const booking = bookings.find(b => b.id === id);
+          if (booking) showReviewScreen(booking);
+        });
+      });
+
+      document.querySelectorAll('.action-btn.whatsapp').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const phone = this.dataset.phone;
+          if (phone) {
+            window.open(`https://wa.me/${phone}`, '_blank');
+          }
+        });
+      });
+
+      document.querySelectorAll('.action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const id = this.dataset.id;
+          const booking = bookings.find(b => b.id === id);
+          if (booking) {
+            showEditBookingForm(booking);
+          }
+        });
+      });
+    }
+
+    function showEditBookingForm(booking) {
+      // إعادة تعبئة النموذج
+      document.getElementById('name').value = booking.name;
+      document.getElementById('phone').value = booking.phoneDisplay;
+      document.getElementById('guests').value = booking.guests;
+      document.getElementById('notes').value = booking.notes;
+
+      // تحديد الحساسية
+      const allergyCheckboxes = document.querySelectorAll('input[name="allergy"]');
+      allergyCheckboxes.forEach(cb => {
+        cb.checked = booking.allergies.includes(cb.value);
+      });
+
+      // اختيار التاريخ والوقت
+      selectedDate = booking.date;
+      selectedTime = booking.time;
+      generateDates();
+      generateTimes();
+
+      // انتقال إلى نموذج الحجز
+      showScreen('booking-form');
+    }
+
+    document.getElementById('btn-back-to-welcome-from-prev').addEventListener('click', () => showScreen('welcome-screen'));
+
+    // ✅ زر "إضافة للتقويم"
+    document.getElementById('add-to-calendar-btn').addEventListener('click', () => {
+      if (!currentBookingData) return;
+
+      const { name, date, time, guests, notes } = currentBookingData;
+      const startDate = new Date(date + 'T' + time + ':00');
+      const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // 2 ساعات
+
+      const event = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'BEGIN:VEVENT',
+        `DTSTART:${startDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+        `DTEND:${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+        `SUMMARY:حجز طاولة - ${name}`,
+        `DESCRIPTION:عدد الضيوف: ${guests}\nملاحظات: ${notes}`,
+        `LOCATION:مطعمك`,
+        'END:VEVENT',
+        'END:VCALENDAR'
+      ].join('\n');
+
+      const blob = new Blob([event], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `حجز_مطعمك_${currentBookingData.referenceNumber}.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // ✅ زر "تواصل معنا"
+    document.getElementById('contact-us-btn').addEventListener('click', () => {
+      window.open('https://wa.me/966561700898', '_blank');
+    });
+
+    // ✅ زر "موقع المطعم"
+    document.getElementById('location-btn').addEventListener('click', () => {
+      window.open('https://maps.app.goo.gl/obZHdpDPCPk7gRiKA', '_blank');
     });
 
     function resetForm() {
@@ -656,6 +1024,8 @@
       document.getElementById('form-error').textContent = '';
     }
 
+    // تحميل اللغة عند بدء التشغيل
+    setLanguage(currentLang);
     showScreen('welcome-screen');
   </script>
 </body>
