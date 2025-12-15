@@ -15,7 +15,7 @@
       color: #333;
       padding: 16px;
     }
-    .container { max-width: 1000px; margin: 0 auto; }
+    .container { max-width: 1100px; margin: 0 auto; }
     .card {
       background: white;
       border-radius: 12px;
@@ -31,7 +31,6 @@
       margin-bottom: 1rem;
     }
     .logo span { color: #25D366; }
-    /* شاشة الدخول */
     #login-screen { display: none; }
     .form-group { margin-bottom: 1rem; }
     input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1.1rem; text-align: center; }
@@ -40,10 +39,9 @@
       background: #2c3e50; color: white; border: none; 
       border-radius: 8px; font-weight: 600; cursor: pointer; 
     }
-    /* لوحة التحكم */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
       margin-bottom: 1.2rem;
     }
@@ -59,10 +57,9 @@
     .stat-card.pending { border-left-color: #f39c12; }
     .stat-card.cancelled { border-left-color: #e74c3c; }
     .stat-card.completed { border-left-color: #3498db; }
-    .stat-value { font-size: 1.5rem; font-weight: 700; margin: 0.2rem 0; }
+    .stat-value { font-size: 1.4rem; font-weight: 700; margin: 0.2rem 0; }
     .stat-label { font-size: 0.9rem; color: #7f8c8d; }
 
-    /* أدوات التحكم */
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -77,7 +74,6 @@
     }
     .search-box { flex: 1; min-width: 200px; }
 
-    /* الجدول */
     .table-container { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th {
@@ -87,6 +83,8 @@
       font-weight: 600;
       color: #2c3e50;
       border-bottom: 2px solid #e9ecef;
+      position: sticky;
+      top: 0;
     }
     td {
       padding: 12px 10px;
@@ -111,17 +109,24 @@
       border: 1px solid #ced4da;
       background: white;
       font-size: 0.9rem;
+      min-width: 100px;
     }
     .empty-state { text-align: center; padding: 2rem; color: #6c757d; }
     .logout-btn {
       background: none; border: none; color: #e74c3c; 
       font-weight: 500; cursor: pointer; margin-left: auto;
     }
+    /* تحسين عرض الرقم المرجعي */
+    .ref-number {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      direction: ltr;
+      font-size: 1.1rem;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- شاشة الدخول -->
     <div id="login-screen" class="card">
       <div class="logo">لوحة تحكم <span>مطعمك</span></div>
       <p style="text-align:center; color:#7f8c8d;">أدخل رمز الدخول (4 أرقام)</p>
@@ -133,7 +138,6 @@
       </form>
     </div>
 
-    <!-- لوحة التحكم -->
     <div id="dashboard" style="display:none;">
       <div class="card">
         <div style="display:flex; align-items:center; margin-bottom:1rem;">
@@ -141,7 +145,6 @@
           <button class="logout-btn" id="logout-btn">خروج</button>
         </div>
 
-        <!-- العدادات -->
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-value" id="total">—</div>
@@ -165,9 +168,8 @@
           </div>
         </div>
 
-        <!-- أدوات التحكم -->
         <div class="controls">
-          <input type="text" id="search-input" class="search-box" placeholder="بحث بالاسم أو الجوال...">
+          <input type="text" id="search-input" class="search-box" placeholder="بحث بالاسم، الجوال، أو الرقم المرجعي...">
           <select id="status-filter" class="filter-select">
             <option value="">جميع الحالات</option>
             <option value="pending">⏳ بانتظار</option>
@@ -183,11 +185,11 @@
           </select>
         </div>
 
-        <!-- الجدول -->
         <div class="table-container">
           <table>
             <thead>
               <tr>
+                <th>الرقم المرجعي</th>
                 <th>المعرف</th>
                 <th>الاسم</th>
                 <th>الجوال</th>
@@ -198,7 +200,7 @@
               </tr>
             </thead>
             <tbody id="bookings-list">
-              <tr><td colspan="7" class="empty-state">جارٍ التحميل...</td></tr>
+              <tr><td colspan="8" class="empty-state">جارٍ التحميل...</td></tr>
             </tbody>
           </table>
         </div>
@@ -222,12 +224,30 @@
 
     let allBookings = [];
 
-    // التحقق من الجلسة
+    // ✅ تشغيل الاستماع الفوري (بدون إعادة تحميل)
+    function startRealtimeListener() {
+      db.ref('bookings').on('value', (snapshot) => {
+        allBookings = [];
+        snapshot.forEach(child => {
+          const b = child.val();
+          if (!b.status) b.status = 'pending';
+          // ضمان وجود referenceNumber (للحجوزات القديمة)
+          if (b.referenceNumber === undefined || b.referenceNumber === null) {
+            b.referenceNumber = '—';
+          }
+          allBookings.push(b);
+        });
+        allBookings.reverse();
+        renderStats();
+        applyFilters();
+      });
+    }
+
     function checkSession() {
       if (sessionStorage.getItem('adminLoggedIn') === 'true') {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
-        loadBookings();
+        startRealtimeListener(); // ✅ التشغيل هنا
       } else {
         document.getElementById('login-screen').style.display = 'block';
         document.getElementById('dashboard').style.display = 'none';
@@ -249,22 +269,6 @@
       checkSession();
     });
 
-    // تحميل الحجوزات
-    function loadBookings() {
-      db.ref('bookings').once('value').then(snapshot => {
-        allBookings = [];
-        snapshot.forEach(child => {
-          const b = child.val();
-          if (!b.status) b.status = 'pending';
-          allBookings.push(b);
-        });
-        allBookings.reverse();
-        renderStats();
-        applyFilters();
-      });
-    }
-
-    // تحديث العدادات
     function renderStats() {
       const total = allBookings.length;
       const confirmed = allBookings.filter(b => b.status === 'confirmed').length;
@@ -279,7 +283,6 @@
       document.getElementById('completed').textContent = completed;
     }
 
-    // تطبيق الفلاتر
     function applyFilters() {
       const search = document.getElementById('search-input').value.toLowerCase();
       const statusFilter = document.getElementById('status-filter').value;
@@ -287,21 +290,19 @@
 
       let filtered = allBookings;
 
-      // بحث
       if (search) {
         filtered = filtered.filter(b => 
           (b.name && b.name.toLowerCase().includes(search)) ||
           (b.phoneDisplay && b.phoneDisplay.includes(search)) ||
-          (b.phone && b.phone.includes(search))
+          (b.phone && b.phone.includes(search)) ||
+          (b.referenceNumber && String(b.referenceNumber).includes(search))
         );
       }
 
-      // فلترة الحالة
       if (statusFilter) {
         filtered = filtered.filter(b => b.status === statusFilter);
       }
 
-      // فلترة التاريخ
       if (dateFilter) {
         const today = new Date();
         const start = new Date(today);
@@ -316,9 +317,8 @@
           end = new Date(start);
           end.setDate(start.getDate() + 1);
         } else if (dateFilter === 'this-week') {
-          // من اليوم إلى آخر يوم في الأسبوع (السبت)
-          const day = today.getDay(); // الأحد = 0
-          start.setDate(today.getDate() - day + (day === 0 ? -6 : 1)); // البدء من الإثنين
+          const day = today.getDay();
+          start.setDate(today.getDate() - day + (day === 0 ? -6 : 1));
           end = new Date(start);
           end.setDate(start.getDate() + 7);
         }
@@ -333,11 +333,10 @@
       renderTable(filtered);
     }
 
-    // عرض الجدول
     function renderTable(bookings) {
       const tbody = document.getElementById('bookings-list');
       if (bookings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">📭 لا توجد نتائج</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state">📭 لا توجد نتائج</td></tr>`;
         return;
       }
 
@@ -353,6 +352,7 @@
 
         return `
           <tr>
+            <td><span class="ref-number">${b.referenceNumber}</span></td>
             <td><code>${b.id?.substring(0,6) || '—'}</code></td>
             <td>${b.name || '—'}</td>
             <td dir="ltr">${phoneDisplay}</td>
@@ -370,25 +370,40 @@
           </tr>`;
       }).join('');
 
-      // ربط حدث التحديث
+      // ✅ ربط التحديث الفوري (بدون إعادة تحميل)
       document.querySelectorAll('.status-dropdown').forEach(sel => {
         sel.addEventListener('change', function() {
           const id = this.dataset.id;
           const newStatus = this.value;
+          
+          // تحديث Firebase
           db.ref(`bookings/${id}/status`).set(newStatus)
             .then(() => {
-              // تحديث الحالة محليًا
-              const badge = this.previousElementSibling || this;
+              // ✅ تحديث الحالة محليًا في الجدول مباشرةً
+              const row = this.closest('tr');
               const newText = {
                 'pending': '⏳ بانتظار',
                 'confirmed': '✅ مؤكّدة',
                 'cancelled': '❌ ملغاة',
                 'completed': '✔️ منتهية'
               }[newStatus];
-              badge.textContent = newText;
-              renderStats();
+              const badgeCell = row.cells[7];
+              badgeCell.innerHTML = `
+                <select class="status-dropdown" data-id="${id}">
+                  <option value="pending" ${newStatus === 'pending' ? 'selected' : ''}>⏳ بانتظار</option>
+                  <option value="confirmed" ${newStatus === 'confirmed' ? 'selected' : ''}>✅ مؤكّدة</option>
+                  <option value="cancelled" ${newStatus === 'cancelled' ? 'selected' : ''}>❌ ملغاة</option>
+                  <option value="completed" ${newStatus === 'completed' ? 'selected' : ''}>✔️ منتهية</option>
+                </select>`;
+              // إعادة ربط الحدث للقائمة الجديدة
+              badgeCell.querySelector('.status-dropdown').addEventListener('change', arguments.callee);
+              
+              renderStats(); // تحديث العدادات
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+              console.error("فشل التحديث:", err);
+              alert("❌ فشل تحديث الحالة. تحقق من الاتصال.");
+            });
         });
       });
     }
@@ -400,11 +415,6 @@
 
     // بدء التشغيل
     checkSession();
-    db.ref('bookings').on('child_added child_changed child_removed', () => {
-      if (sessionStorage.getItem('adminLoggedIn') === 'true') {
-        loadBookings(); // إعادة التحميل عند أي تغيير
-      }
-    });
   </script>
 </body>
 </html>
