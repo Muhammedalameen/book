@@ -62,7 +62,6 @@
     .btn-back { background: #7f8c8d; color: white; margin-top: 1rem; }
     .btn-back:hover { background: #6c7a7a; }
     
-    /* نموذج الحجز */
     .form-title { font-size: 1.5rem; font-weight: 700; color: #2c3e50; margin-bottom: 1.2rem; text-align: center; }
     .form-group { margin-bottom: 1.3rem; }
     label {
@@ -97,7 +96,6 @@
     .btn-submit:hover { background: #1a252f; }
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
-    /* جدول التواريخ والأوقات */
     .dates-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 1.5rem; }
     .date-card {
       background: #f8f9fa;
@@ -126,7 +124,7 @@
     .time-btn:hover { background: #e9ecef; }
     .time-btn.selected { background: #3498db; color: white; border-color: #2980b9; }
 
-    /* قسم الحساسية - مُحسّن */
+    /* قسم الحساسية - بدون "لا يوجد" */
     .allergy-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -163,15 +161,12 @@
     .allergy-icon.eggs { background: #e8f5e9; color: #388e3c; }
     .allergy-icon.soy { background: #f1f8e9; color: #689f38; }
     .allergy-icon.seafood { background: #e0f7fa; color: #00838f; }
-    .allergy-icon.none { background: #e8f5e8; color: #2e7d32; }
 
-    /* شاشات */
     #welcome-screen, #booking-form, #check-booking-screen, #confirmation-screen, #review-screen {
       display: none;
     }
     .active { display: block !important; }
 
-    /* شاشة التأكيد */
     .confirmation-card { text-align: center; padding: 2rem; }
     .confirmation-icon { font-size: 3rem; margin-bottom: 1rem; color: #27ae60; }
     .booking-id {
@@ -204,7 +199,6 @@
       text-align: center;
     }
 
-    /* التنبيهات */
     .error-msg {
       color: #e74c3c;
       text-align: center;
@@ -220,7 +214,6 @@
       <div class="logo">مطعم<span>ك</span></div>
     </header>
 
-    <!-- شاشة البداية -->
     <div id="welcome-screen" class="card active">
       <h1 class="welcome-title">مرحبًا بك في مطعمك</h1>
       <p style="text-align:center; color:#7f8c8d; margin-bottom:1.5rem;">
@@ -230,7 +223,6 @@
       <button id="btn-check-booking" class="btn-choice btn-check">🔍 مراجعة حجز سابق</button>
     </div>
 
-    <!-- شاشة الحجز الجديد -->
     <div id="booking-form" class="card">
       <h1 class="form-title">📅 حجز طاولة جديدة</h1>
       
@@ -249,9 +241,9 @@
         <input type="text" id="name" placeholder="مثال: أحمد محمد" required>
       </div>
       <div class="form-group">
-        <label for="phone">رقم الجوال (يبدأ بـ 5) *</label>
-        <input type="tel" id="phone" placeholder="5XXXXXXXX" maxlength="9" required>
-        <small style="color:#7f8c8d; font-size:0.85rem;">مثال: 501234567</small>
+        <label for="phone">رقم الجوال (يبدأ بـ 05) *</label>
+        <input type="tel" id="phone" placeholder="05XXXXXXXX" maxlength="10" required>
+        <small style="color:#7f8c8d; font-size:0.85rem;">مثال: 0501234567</small>
       </div>
       <div class="form-group">
         <label for="guests">عدد الضيوف</label>
@@ -262,9 +254,9 @@
         <textarea id="notes" placeholder="كرسي أطفال، ذكرى خاصة..."></textarea>
       </div>
 
-      <!-- ✅ قسم الحساسية المُحسّن -->
+      <!-- ✅ قسم الحساسية بدون "لا يوجد" -->
       <div class="form-group">
-        <label>هل لديك أي حساسية من الطعام؟ (يمكن اختيار أكثر من خيار)</label>
+        <label>هل لديك أي حساسية من الطعام؟</label>
         <div class="allergy-grid">
           <label class="allergy-item">
             <span class="allergy-icon gluten">ق</span>
@@ -296,11 +288,6 @@
             <input type="checkbox" name="allergy" value="seafood">
             <span>المأكولات البحرية</span>
           </label>
-          <label class="allergy-item">
-            <span class="allergy-icon none">✓</span>
-            <input type="checkbox" name="allergy" value="none">
-            <span><strong>لا يوجد</strong></span>
-          </label>
         </div>
         <small style="color:#7f8c8d; font-size:0.85rem; display:block; margin-top:0.5rem;">
           ⚠️ سيتم إبلاغ الطاهي بهذه المعلومات لتجنب أي مخاطر
@@ -312,19 +299,17 @@
       <div id="form-error" class="error-msg"></div>
     </div>
 
-    <!-- شاشة مراجعة الحجز -->
     <div id="check-booking-screen" class="card">
       <h1 class="form-title">🔍 مراجعة حجز سابق</h1>
       <div class="form-group">
-        <label for="search-ref">أدخل الرقم المرجعي (7 أرقام) أو رقم الجوال (5XXXXXXXX)</label>
-        <input type="text" id="search-ref" placeholder="مثال: 4829105 أو 501234567" maxlength="9">
+        <label for="search-ref">أدخل الرقم المرجعي (7 أرقام) أو رقم الجوال (05XXXXXXXX)</label>
+        <input type="text" id="search-ref" placeholder="مثال: 4829105 أو 0501234567" maxlength="10">
       </div>
       <button id="search-btn" class="btn-submit">بحث عن الحجز</button>
       <button id="btn-back-from-check" class="btn-choice btn-back">← العودة إلى القائمة</button>
       <div id="search-result"></div>
     </div>
 
-    <!-- شاشة التأكيد -->
     <div id="confirmation-screen" class="card">
       <div class="confirmation-card">
         <div class="confirmation-icon">🎉</div>
@@ -370,7 +355,6 @@
       </div>
     </div>
 
-    <!-- شاشة عرض الحجز (للمراجعة) -->
     <div id="review-screen" class="card">
       <h2 style="text-align:center; margin-bottom:1.5rem;">تفاصيل الحجز</h2>
       <div id="review-content"></div>
@@ -395,7 +379,6 @@
     let selectedTime = null;
     let currentBookingData = null;
 
-    // ✅ توليد أوقات من 13:00 إلى 01:00
     function generateTimeSlots() {
       const times = [];
       for (let h = 13; h <= 23; h++) {
@@ -407,13 +390,11 @@
     }
     const AVAILABLE_TIMES = generateTimeSlots();
 
-    // عرض/إخفاء الشاشات
     function showScreen(id) {
       document.querySelectorAll('.card').forEach(el => el.classList.remove('active'));
       document.getElementById(id).classList.add('active');
     }
 
-    // إعداد أحداث الأزرار في الشاشة الرئيسية
     document.getElementById('btn-new-booking').addEventListener('click', () => {
       showScreen('booking-form');
       generateDates();
@@ -427,7 +408,6 @@
     });
     document.getElementById('btn-back-to-confirm').addEventListener('click', () => showScreen('confirmation-screen'));
 
-    // توليد التواريخ
     function generateDates() {
       const grid = document.getElementById('dates-grid');
       grid.innerHTML = '';
@@ -482,34 +462,18 @@
       validateForm();
     }
 
-    // ✅ التحقق من اكتمال البيانات الأساسية
     function validateForm() {
       const name = document.getElementById('name').value.trim();
       const phone = document.getElementById('phone').value.trim();
-      const isValid = selectedDate && selectedTime && name && /^5\d{8}$/.test(phone);
+      const isValid = selectedDate && selectedTime && name && /^05\d{8}$/.test(phone);
       document.getElementById('submit-btn').disabled = !isValid;
       return isValid;
     }
 
-    // تفاعل الحساسية: "لا يوجد" يلغي الباقي والعكس
-    document.querySelectorAll('input[name="allergy"]').forEach(cb => {
-      cb.addEventListener('change', function() {
-        if (this.value === 'none' && this.checked) {
-          document.querySelectorAll('input[name="allergy"]').forEach(c => {
-            if (c.value !== 'none') c.checked = false;
-          });
-        } else if (this.value !== 'none' && this.checked) {
-          document.querySelector('input[name="allergy"][value="none"]').checked = false;
-        }
-      });
-    });
-
-    // ✅ توليد رقم مرجعي من 7 أرقام
     function generateReferenceNumber() {
       return Math.floor(1000000 + Math.random() * 9000000);
     }
 
-    // معالجة الحجز
     document.getElementById('submit-btn').addEventListener('click', async () => {
       const name = document.getElementById('name').value.trim();
       const phoneInput = document.getElementById('phone').value.trim();
@@ -522,16 +486,20 @@
         return;
       }
 
-      // جمع الحساسية
+      // ✅ التحقق: 05XXXXXXXX
+      if (!/^05\d{8}$/.test(phoneInput)) {
+        document.getElementById('form-error').textContent = "يرجى إدخال رقم جوال سعودي صحيح (يبدأ بـ 05، مثال: 0501234567)";
+        setTimeout(() => document.getElementById('form-error').textContent = "", 3000);
+        return;
+      }
+
+      // ✅ التحويل: 05XXX → 9665XXX
+      const phoneFull = "966" + phoneInput.substring(1);
+
+      // ✅ جمع الحساسية (بدون "لا يوجد")
       const allergyCheckboxes = document.querySelectorAll('input[name="allergy"]:checked');
-      let allergies = [];
-      allergyCheckboxes.forEach(cb => {
-        if (cb.value === 'none') {
-          allergies = ['لا يوجد'];
-        } else if (allergies.indexOf('لا يوجد') === -1) {
-          allergies.push(cb.value);
-        }
-      });
+      const allergies = [];
+      allergyCheckboxes.forEach(cb => allergies.push(cb.value));
 
       const allergyMap = {
         gluten: 'القمح/الجلوتين',
@@ -539,15 +507,11 @@
         dairy: 'الحليب/الألبان',
         eggs: 'البيض',
         soy: 'الصويا',
-        seafood: 'المأكولات البحرية',
-        none: 'لا يوجد'
+        seafood: 'المأكولات البحرية'
       };
       const allergiesAr = allergies.map(a => allergyMap[a] || a);
-      const allergiesDisplay = allergies.length > 0 && allergies[0] !== 'لا يوجد' 
-        ? allergiesAr.join('، ') 
-        : 'لا يوجد';
+      const allergiesDisplay = allergiesAr.length > 0 ? allergiesAr.join('، ') : '—';
 
-      const phoneFull = "966" + phoneInput;
       const dateObj = new Date(selectedDate);
       const dateDisplay = dateObj.toLocaleDateString('ar-SA', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
@@ -576,11 +540,8 @@
         };
 
         await newRef.set(bookingData);
-
-        // حفظ النسخة الحالية لعرضها لاحقًا
         currentBookingData = bookingData;
 
-        // عرض شاشة التأكيد
         document.getElementById('conf-id').textContent = referenceNumber;
         document.getElementById('conf-name').textContent = name;
         document.getElementById('conf-date').textContent = dateDisplay;
@@ -596,16 +557,14 @@
       }
     });
 
-    // زر مراجعة الحجز من شاشة التأكيد
     document.getElementById('review-booking-btn').addEventListener('click', () => {
       if (currentBookingData) {
         showReviewScreen(currentBookingData);
       }
     });
 
-    // عرض تفاصيل الحجز في شاشة المراجعة
     function showReviewScreen(booking) {
-      const allergiesTxt = booking.allergiesDisplay || (Array.isArray(booking.allergies) ? booking.allergies.join('، ') : '—');
+      const allergiesTxt = booking.allergiesDisplay;
       document.getElementById('review-content').innerHTML = `
         <div class="summary-item">
           <span class="summary-label">الرقم المرجعي:</span>
@@ -629,7 +588,7 @@
         </div>
         <div class="summary-item">
           <span class="summary-label">الحساسية:</span>
-          <span class="summary-value" style="color:${allergiesTxt === 'لا يوجد' ? '#27ae60' : '#e74c3c'}; font-weight:${allergiesTxt === 'لا يوجد' ? 'normal' : 'bold'};">
+          <span class="summary-value" style="color:${allergiesTxt === '—' ? '#7f8c8d' : '#e74c3c'}; font-weight:${allergiesTxt === '—' ? 'normal' : 'bold'};">
             ${allergiesTxt}
           </span>
         </div>
@@ -645,7 +604,6 @@
       showScreen('review-screen');
     }
 
-    // ✅ بحث عن حجز سابق
     document.getElementById('search-btn').addEventListener('click', async () => {
       const query = document.getElementById('search-ref').value.trim();
       if (!query) return;
@@ -654,14 +612,19 @@
       resultDiv.innerHTML = '<p style="text-align:center;">جارٍ البحث...</p>';
 
       try {
-        const snapshot = await db.ref('bookings').orderByChild('referenceNumber').equalTo(parseInt(query)).once('value');
         let booking = null;
 
-        if (snapshot.exists()) {
-          snapshot.forEach(child => { booking = child.val(); });
-        } else if (/^5\d{8}$/.test(query)) {
-          // بحث برقم الجوال
-          const phoneQuery = "966" + query;
+        // بحث بالرقم المرجعي
+        if (/^\d{7}$/.test(query)) {
+          const snapshot = await db.ref('bookings').orderByChild('referenceNumber').equalTo(parseInt(query)).once('value');
+          if (snapshot.exists()) {
+            snapshot.forEach(child => { booking = child.val(); });
+          }
+        }
+
+        // بحث برقم الجوال (05XXXXXXXX)
+        if (!booking && /^05\d{8}$/.test(query)) {
+          const phoneQuery = "966" + query.substring(1);
           const snap2 = await db.ref('bookings').orderByChild('phone').equalTo(phoneQuery).once('value');
           if (snap2.exists()) {
             snap2.forEach(child => { booking = child.val(); });
@@ -680,7 +643,6 @@
       }
     });
 
-    // إعادة تعيين النموذج
     function resetForm() {
       document.getElementById('name').value = '';
       document.getElementById('phone').value = '';
@@ -694,7 +656,6 @@
       document.getElementById('form-error').textContent = '';
     }
 
-    // بدء التشغيل
     showScreen('welcome-screen');
   </script>
 </body>
