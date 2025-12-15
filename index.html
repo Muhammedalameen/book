@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>حجز طاولة</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 2rem; line-height: 1.6; }
+    .form-group { margin: 1.2rem 0; }
+    label { display: block; margin-bottom: 0.4rem; font-weight: bold; }
+    input, textarea, select { width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 4px; }
+    button { 
+      background: #25D366; 
+      color: white; 
+      border: none; 
+      padding: 0.8rem 2rem; 
+      font-size: 1.1rem; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      margin-top: 1rem;
+    }
+    button:hover { background: #1ebe56; }
+    .alert { padding: 0.8rem; margin: 1rem 0; border-radius: 4px; }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+  </style>
+</head>
+<body>
+  <h1>حجز طاولة</h1>
+  <form id="bookingForm">
+    <div class="form-group">
+      <label for="name">الاسم الكامل:</label>
+      <input type="text" id="name" required>
+    </div>
+    <div class="form-group">
+      <label for="phone">رقم الجوال (مثال: 966501234567):</label>
+      <input type="tel" id="phone" required placeholder="9665XXXXXXXX">
+    </div>
+    <div class="form-group">
+      <label for="guests">عدد الأشخاص:</label>
+      <input type="number" id="guests" min="1" max="20" value="2" required>
+    </div>
+    <div class="form-group">
+      <label for="date">التاريخ:</label>
+      <input type="date" id="date" required>
+    </div>
+    <div class="form-group">
+      <label for="time">الوقت:</label>
+      <input type="time" id="time" required>
+    </div>
+    <div class="form-group">
+      <label for="notes">ملاحظات (اختياري):</label>
+      <textarea id="notes" rows="2" placeholder="مثال: بجانب النافذة، مناسبات خاصة..."></textarea>
+    </div>
+    <button type="submit">تأكيد الحجز عبر واتساب</button>
+  </form>
+
+  <div id="messages"></div>
+
+  <!-- 🔥 إضافة Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    // 👇 الصق الـ firebaseConfig هنا بعد نسخه من لوحة التحكم
+    const firebaseConfig = {
+      // ⚠️ احذف هذا السطر كله، والصق الكتلة التي نسختها من Firebase هنا
+      // مثال:
+      // apiKey: "AIzaSy...",
+      // authDomain: "...",
+      // ...
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    document.getElementById('bookingForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // جمع البيانات
+      const name = document.getElementById('name').value.trim();
+      let phone = document.getElementById('phone').value.trim();
+      const guests = document.getElementById('guests').value;
+      const dateInput = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const notes = document.getElementById('notes').value.trim() || "لا توجد ملاحظات";
+
+      // تنظيف رقم الجوال: إزالة أي رموز غير أرقام
+      phone = phone.replace(/\D/g, '');
+
+      // التحقق: هل الرقم يبدأ بـ 9665 وطوله 12؟
+      if (!/^9665\d{8}$/.test(phone)) {
+        showMessage("يرجى إدخال رقم جوال سعودي صحيح (يبدأ بـ 9665)", "error");
+        return;
+      }
+
+      // تحويل التاريخ إلى نص عربي للعرض
+      const dateDisplay = new Date(dateInput).toLocaleDateString('ar-SA', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      // إنشاء معرف فريد للحجز
+      const newBookingRef = database.ref('bookings').push();
+      const bookingId = newBookingRef.key;
+
+      // بيانات الحجز
+      const bookingData = {
+        id: bookingId,
+        name: name,
+        phone: phone,
+        guests: parseInt(guests),
+        date: dateInput,           // YYYY-MM-DD (للفرز)
+        dateDisplay: dateDisplay,  // نص مقروء
+        time: time,
+        notes: notes,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      };
+
+      // الحفظ في Firebase
+      newBookingRef.set(bookingData)
+        .then(() => {
+          console.log("✓ تم حفظ الحجز:", bookingId);
+
+          // ✅ توليد رسالة واتساب
+          const message = `📌 *طلب حجز طاولة جديد*\n\n` +
+                          `🔢 معرف الحجز: ${bookingId}\n` +
+                          `👤 الاسم: ${name}\n` +
+                          `📱 الجوال: +${phone}\n` +
+                          `👥 عدد الأشخاص: ${guests}\n` +
+                          `📅 التاريخ: ${dateDisplay}\n` +
+                          `⏰ الوقت: ${time}\n` +
+                          `📝 ملاحظات: ${notes}`;
+
+          const encoded = encodeURIComponent(message);
+          const whatsappUrl = `https://wa.me/${phone}?text=${encoded}`;
+
+          // عرض رسالة نجاح
+          showMessage(`تم إرسال طلب الحجز! (المعرف: ${bookingId})`, "success");
+          
+          // فتح واتساب بعد 1.5 ثانية
+          setTimeout(() => {
+            window.open(whatsappUrl, '_blank');
+          }, 1500);
+        })
+        .catch((error) => {
+          console.error("خطأ:", error);
+          showMessage("فشل حفظ الحجز. تحقق من الاتصال وحاول مجددًا.", "error");
+        });
+    });
+
+    function showMessage(text, type) {
+      const div = document.createElement('div');
+      div.className = `alert alert-${type}`;
+      div.textContent = text;
+      document.getElementById('messages').innerHTML = '';
+      document.getElementById('messages').appendChild(div);
+      setTimeout(() => div.remove(), 5000);
+    }
+
+    // تعيين التاريخ الافتراضي ليوم غد (لتحسين تجربة المستخدم)
+    document.addEventListener('DOMContentLoaded', () => {
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const yyyy = tomorrow.getFullYear();
+      const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+      const dd = String(tomorrow.getDate()).padStart(2, '0');
+      document.getElementById('date').value = `${yyyy}-${mm}-${dd}`;
+    });
+  </script>
+</body>
+</html>
