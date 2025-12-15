@@ -82,7 +82,6 @@
       text-decoration: none;
       font-weight: 500;
     }
-    /* جدول التواريخ */
     .dates-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -102,7 +101,6 @@
     .date-card.selected { border-color: #3498db; background: #edf7ff; }
     .date-day { font-weight: 700; color: #2c3e50; font-size: 1.2rem; }
     .date-date { color: #7f8c8d; margin-top: 0.2rem; }
-    /* جدول الأوقات */
     .times-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -125,7 +123,6 @@
       color: white;
       border-color: #2980b9;
     }
-    /* شاشة التأكيد */
     #confirmation-screen { display: none; }
     .confirmation-card {
       text-align: center;
@@ -173,7 +170,6 @@
       <div class="logo">مطعم<span>ك</span></div>
     </header>
 
-    <!-- نموذج الحجز -->
     <div id="booking-form" class="card">
       <h1 class="form-title">📅 اختر موعد الحجز</h1>
       
@@ -204,11 +200,42 @@
         <label for="notes">ملاحظات (اختياري)</label>
         <textarea id="notes" placeholder="كرسي أطفال، ذكرى خاصة..."></textarea>
       </div>
+
+      <!-- ✅ قسم الحساسية -->
+      <div class="form-group">
+        <label>هل لديك أي حساسية من الطعام؟ (يمكن اختيار أكثر من خيار)</label>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 0.5rem;">
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="allergy" value="gluten"> القمح / الجلوتين
+          </label>
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="allergy" value="nuts"> المكسرات
+          </label>
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="allergy" value="dairy"> الحليب / الألبان
+          </label>
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="allergy" value="eggs"> البيض
+          </label>
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="allergy" value="soy"> الصويا
+          </label>
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="allergy" value="seafood"> المأكولات البحرية
+          </label>
+          <label style="display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="allergy" value="none"> لا يوجد
+          </label>
+        </div>
+        <small style="color:#7f8c8d; font-size:0.85rem; display:block; margin-top:0.5rem;">
+          ⚠️ سيتم إبلاغ الطاهي بهذه المعلومات لتجنب أي مخاطر
+        </small>
+      </div>
+
       <button id="submit-btn" class="btn" disabled>تأكيد الحجز</button>
       <a href="admin.html" class="admin-link">🔐 لوحة التحكم</a>
     </div>
 
-    <!-- شاشة التأكيد -->
     <div id="confirmation-screen" class="card">
       <div class="confirmation-card">
         <div class="confirmation-icon">🎉</div>
@@ -233,6 +260,10 @@
           <div class="summary-item">
             <span class="summary-label">الضيوف:</span>
             <span class="summary-value" id="conf-guests">—</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">الحساسية:</span>
+            <span class="summary-value" id="conf-allergies">—</span>
           </div>
         </div>
 
@@ -264,21 +295,18 @@
     let selectedDate = null;
     let selectedTime = null;
 
-    // ✅ توليد أوقات من 13:00 إلى 01:00 (24 فترة، كل 30 دقيقة)
+    // ✅ أوقات من 13:00 إلى 01:00 (24 فترة، كل 30 دقيقة)
     function generateTimeSlots() {
       const times = [];
-      // من 13:00 إلى 23:30
       for (let h = 13; h <= 23; h++) {
         times.push(`${String(h).padStart(2, '0')}:00`);
         times.push(`${String(h).padStart(2, '0')}:30`);
       }
-      // منتصف الليل وساعة الفجر
       times.push('00:00', '00:30', '01:00');
       return times;
     }
-    const AVAILABLE_TIMES = generateTimeSlots(); // 24 عنصرًا
+    const AVAILABLE_TIMES = generateTimeSlots();
 
-    // توليد التواريخ (اليوم + 6 أيام)
     function generateDates() {
       const grid = document.getElementById('dates-grid');
       grid.innerHTML = '';
@@ -289,7 +317,7 @@
         const date = new Date(today);
         date.setDate(today.getDate() + i);
         const display = formatter.format(date);
-        const iso = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        const iso = date.toISOString().split('T')[0];
 
         const div = document.createElement('div');
         div.className = 'date-card';
@@ -333,12 +361,11 @@
       document.getElementById('submit-btn').disabled = !(selectedDate && selectedTime);
     }
 
-    // ✅ توليد رقم مرجعي عشوائي من 7 أرقام
+    // ✅ توليد رقم مرجعي من 7 أرقام
     function generateReferenceNumber() {
-      return Math.floor(1000000 + Math.random() * 9000000); // من 1000000 إلى 9999999
+      return Math.floor(1000000 + Math.random() * 9000000);
     }
 
-    // معالجة الحجز
     document.getElementById('submit-btn').addEventListener('click', async () => {
       const name = document.getElementById('name').value.trim();
       const phoneInput = document.getElementById('phone').value.trim();
@@ -350,16 +377,36 @@
         return;
       }
 
+      // ✅ جمع الحساسية
+      const allergyCheckboxes = document.querySelectorAll('input[name="allergy"]:checked');
+      let allergies = [];
+      allergyCheckboxes.forEach(cb => {
+        if (cb.value === 'none') {
+          allergies = ['لا يوجد'];
+        } else if (allergies.indexOf('لا يوجد') === -1) {
+          allergies.push(cb.value);
+        }
+      });
+
+      const allergyMap = {
+        gluten: 'القمح/الجلوتين',
+        nuts: 'المكسرات',
+        dairy: 'الحليب/الألبان',
+        eggs: 'البيض',
+        soy: 'الصويا',
+        seafood: 'المأكولات البحرية',
+        none: 'لا يوجد'
+      };
+      const allergiesAr = allergies.map(a => allergyMap[a] || a);
+      const allergiesDisplay = allergies.length > 0 && allergies[0] !== 'لا يوجد' 
+        ? allergiesAr.join('، ') 
+        : 'لا يوجد';
+
       const phoneFull = "966" + phoneInput;
       const dateObj = new Date(selectedDate);
       const dateDisplay = dateObj.toLocaleDateString('ar-SA', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
       });
-      
-      // ✅ توليد الرقم المرجعي (7 أرقام فقط)
       const referenceNumber = generateReferenceNumber();
 
       try {
@@ -368,7 +415,7 @@
 
         await newRef.set({
           id: bookingId,
-          referenceNumber: referenceNumber, // ⬅️ الرقم المرجعي المطلوب
+          referenceNumber: referenceNumber,
           name,
           phone: phoneFull,
           phoneDisplay: phoneInput,
@@ -377,16 +424,19 @@
           time: selectedTime,
           dateDisplay,
           notes,
+          allergies: allergiesAr,
+          allergiesDisplay: allergiesDisplay,
           status: 'pending',
           timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        // إظهار شاشة التأكيد
+        // ✅ عرض في شاشة التأكيد
         document.getElementById('conf-id').textContent = referenceNumber;
         document.getElementById('conf-name').textContent = name;
         document.getElementById('conf-date').textContent = dateDisplay;
         document.getElementById('conf-time').textContent = selectedTime;
         document.getElementById('conf-guests').textContent = guests;
+        document.getElementById('conf-allergies').textContent = allergiesDisplay;
 
         document.getElementById('booking-form').style.display = 'none';
         document.getElementById('confirmation-screen').style.display = 'block';
@@ -397,7 +447,6 @@
       }
     });
 
-    // حجز جديد
     document.getElementById('new-booking-btn').addEventListener('click', () => {
       document.getElementById('booking-form').style.display = 'block';
       document.getElementById('confirmation-screen').style.display = 'none';
@@ -405,6 +454,7 @@
       document.getElementById('phone').value = '';
       document.getElementById('guests').value = '2';
       document.getElementById('notes').value = '';
+      document.querySelectorAll('input[name="allergy"]').forEach(el => el.checked = false);
       document.querySelectorAll('.date-card, .time-btn').forEach(el => el.classList.remove('selected'));
       selectedDate = null;
       selectedTime = null;
@@ -412,7 +462,6 @@
       generateDates();
     });
 
-    // بدء التشغيل
     generateDates();
   </script>
 </body>
