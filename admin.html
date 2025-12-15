@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم - الحجوزات</title>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, sans-serif; 
+      margin: 2rem; 
+      background: #f8f9fa;
+    }
+    h1 { color: #2c3e50; }
+    table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      margin-top: 1.5rem; 
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    th, td { 
+      border: 1px solid #dee2e6; 
+      padding: 1rem; 
+      text-align: right; 
+    }
+    th { 
+      background: #007bff; 
+      color: white; 
+      font-weight: bold;
+    }
+    tr:nth-child(even) { background: #f2f7ff; }
+    tr:hover { background: #e9f2ff; }
+    code { 
+      background: #eee; 
+      padding: 0.2rem 0.4rem; 
+      border-radius: 3px; 
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+    .status { 
+      display: inline-block;
+      padding: 0.3rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+    .status.connected { background: #d4edda; color: #155724; }
+    .status.disconnected { background: #f8d7da; color: #721c24; }
+    .timestamp { 
+      color: #6c757d; 
+      font-size: 0.85em;
+      white-space: nowrap;
+    }
+    #statusBar {
+      margin-bottom: 1.5rem;
+      padding: 0.8rem;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>لوحة التحكم — عرض الحجوزات</h1>
+  
+  <div id="statusBar" class="status disconnected">🔴 جاري الاتصال بقاعدة البيانات...</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>المعرف</th>
+        <th>الاسم</th>
+        <th>الجوال</th>
+        <th>التاريخ</th>
+        <th>الوقت</th>
+        <th>الأشخاص</th>
+        <th>الملاحظات</th>
+        <th>وقت الإرسال</th>
+      </tr>
+    </thead>
+    <tbody id="bookingsList">
+      <tr><td colspan="8" style="text-align:center; padding:1.5rem;">جارٍ التحميل...</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 🔥 Firebase SDK (مُحدّث — بدون مسافات زائدة) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <script>
+    // ✅ إعدادات مشروعك table-booking-5d9d4 (بدون مسافات في databaseURL)
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnH3AczYq13NMVA18BhucGzeffEuC5QIM",
+      authDomain: "table-booking-5d9d4.firebaseapp.com",
+      databaseURL: "https://table-booking-5d9d4-default-rtdb.firebaseio.com", // ✅ مسافات مُزالة
+      projectId: "table-booking-5d9d4",
+      storageBucket: "table-booking-5d9d4.firebasestorage.app",
+      messagingSenderId: "1097720872360",
+      appId: "1:1097720872360:web:b8d94656b7440b4353719d"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 👇 مؤشر حالة الاتصال
+    const statusDiv = document.getElementById('statusBar');
+    db.ref('.info/connected').on('value', (snap) => {
+      if (snap.val()) {
+        statusDiv.className = "status connected";
+        statusDiv.innerHTML = "🟢 متصل بقاعدة البيانات — التحديث آني";
+      } else {
+        statusDiv.className = "status disconnected";
+        statusDiv.innerHTML = "🔴 انقطع الاتصال — يُعاد المحاولة تلقائيًا";
+      }
+    });
+
+    // 👇 عرض الحجوزات (مرتبة من الأحدث إلى الأقدم)
+    const bookingsList = document.getElementById('bookingsList');
+
+    db.ref('bookings')
+      .orderByChild('timestamp')
+      .on('value', (snapshot) => {
+        bookingsList.innerHTML = '';
+
+        if (snapshot.exists()) {
+          const bookings = [];
+          snapshot.forEach((child) => {
+            bookings.push(child.val());
+          });
+
+          // عكس الترتيب: الأحدث أولًا
+          bookings.reverse().forEach((b) => {
+            const timestamp = b.timestamp || Date.now();
+            const dateObj = new Date(timestamp);
+            const timeStr = dateObj.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = dateObj.toLocaleDateString('ar-SA');
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td><code>${(b.id || '').substring(0,6) || '---'}</code></td>
+              <td>${b.name || '—'}</td>
+              <td dir="ltr">+${b.phone || '—'}</td>
+              <td>${b.dateDisplay || b.date || '—'}</td>
+              <td>${b.time || '—'}</td>
+              <td>${b.guests || '—'}</td>
+              <td>${b.notes.length > 30 ? b.notes.substring(0,30)+'...' : b.notes || '—'}</td>
+              <td class="timestamp">${timeStr} <br> ${dateStr}</td>
+            `;
+            bookingsList.appendChild(row);
+          });
+        } else {
+          bookingsList.innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align:center; padding:2rem; color:#6c757d;">
+                لا توجد حجوزات بعد.<br>
+                <small>سيظهر الحجز هنا فور إرساله من صفحة الحجز.</small>
+              </td>
+            </tr>`;
+        }
+      });
+  </script>
+</body>
+</html>
