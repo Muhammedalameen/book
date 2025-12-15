@@ -10,42 +10,40 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Tajawal', 'Segoe UI', sans-serif;
+      font-family: 'Tajawal', sans-serif;
       background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
       color: #333;
       line-height: 1.6;
-      padding: 20px;
+      padding: 16px;
       min-height: 100vh;
     }
     .container { max-width: 600px; margin: 0 auto; }
     header {
       text-align: center;
-      margin-bottom: 2rem;
-      padding: 1.5rem 0;
+      margin-bottom: 1.5rem;
+      padding: 1.2rem 0;
     }
     .logo {
-      font-size: 2.4rem;
+      font-size: 2.2rem;
       font-weight: 700;
       color: #2c3e50;
-      margin-bottom: 0.5rem;
     }
     .logo span { color: #25D366; }
-    .subtitle { color: #7f8c8d; font-size: 1.1rem; }
     .card {
       background: white;
       border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-      padding: 2rem;
-      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+      padding: 1.8rem;
+      margin-bottom: 1.2rem;
     }
     .form-title {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 700;
       color: #2c3e50;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.2rem;
       text-align: center;
     }
-    .form-group { margin-bottom: 1.4rem; }
+    .form-group { margin-bottom: 1.3rem; }
     label {
       display: block;
       margin-bottom: 0.5rem;
@@ -61,12 +59,7 @@
       font-family: inherit;
       transition: all 0.3s ease;
     }
-    input:focus, textarea:focus {
-      outline: none;
-      border-color: #3498db;
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
-    }
-    textarea { min-height: 80px; resize: vertical; }
+    input:focus { outline: none; border-color: #3498db; }
     .btn {
       display: block;
       width: 100%;
@@ -78,13 +71,9 @@
       font-size: 1.1rem;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(44, 62, 80, 0.2);
+      transition: background 0.3s;
     }
-    .btn:hover {
-      background: #1a252f;
-      transform: translateY(-2px);
-    }
+    .btn:hover { background: #1a252f; }
     .admin-link {
       display: block;
       text-align: center;
@@ -93,28 +82,90 @@
       text-decoration: none;
       font-weight: 500;
     }
-    .admin-link:hover { text-decoration: underline; }
-    .toast {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      padding: 14px 24px;
-      border-radius: 10px;
-      color: white;
-      font-weight: 500;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      z-index: 1000;
-      transition: transform 0.4s ease, opacity 0.4s ease;
-      max-width: 90%;
+    /* جدول التواريخ */
+    .dates-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 1.5rem;
     }
-    .toast.show { transform: translateX(-50%) translateY(0); }
-    .toast.success { background: #27ae60; }
-    .toast.error { background: #e74c3c; }
-    @media (max-width: 600px) {
-      .card { padding: 1.5rem; }
-      .form-title { font-size: 1.4rem; }
-      .logo { font-size: 2rem; }
+    .date-card {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .date-card:hover { background: #e9ecef; }
+    .date-card.selected { border-color: #3498db; background: #edf7ff; }
+    .date-day { font-weight: 700; color: #2c3e50; font-size: 1.2rem; }
+    .date-date { color: #7f8c8d; margin-top: 0.2rem; }
+    /* جدول الأوقات */
+    .times-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+    .time-btn {
+      padding: 10px;
+      background: #f1f3f5;
+      border: 2px solid #e0e6ed;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .time-btn:hover { background: #e9ecef; }
+    .time-btn.selected {
+      background: #3498db;
+      color: white;
+      border-color: #2980b9;
+    }
+    .time-btn.disabled {
+      background: #f8d7da;
+      color: #721c24;
+      cursor: not-allowed;
+    }
+    /* شاشة التأكيد */
+    #confirmation-screen { display: none; }
+    .confirmation-card {
+      text-align: center;
+      padding: 2rem;
+    }
+    .confirmation-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: #27ae60;
+    }
+    .booking-id {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      margin: 1rem 0;
+      direction: ltr;
+    }
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed #eee;
+    }
+    .summary-label { font-weight: 500; color: #2c3e50; }
+    .summary-value { color: #7f8c8d; }
+    .instructions {
+      background: #e3f2fd;
+      padding: 16px;
+      border-radius: 10px;
+      margin-top: 1.5rem;
+      font-weight: 500;
+      color: #0d47a1;
     }
   </style>
 </head>
@@ -122,50 +173,81 @@
   <div class="container">
     <header>
       <div class="logo">مطعم<span>ك</span></div>
-      <p class="subtitle">احجز طاولتك المفضلة في دقائق</p>
     </header>
 
-    <main>
-      <div class="card">
-        <h1 class="form-title">📝 حجز طاولة جديدة</h1>
-        <form id="bookingForm">
-          <div class="form-group">
-            <label for="name">الاسم الكامل</label>
-            <input type="text" id="name" placeholder="مثال: أحمد محمد" required>
-          </div>
-          <div class="form-group">
-            <label for="phone">رقم الجوال (يبدأ بـ 5)</label>
-            <input type="tel" id="phone" placeholder="5XXXXXXXX" maxlength="9" required>
-            <small style="color:#7f8c8d; font-size:0.85rem;">مثال: 501234567</small>
-          </div>
-          <div class="form-group">
-            <label for="guests">عدد الضيوف</label>
-            <input type="number" id="guests" min="1" max="20" value="2" required>
-          </div>
-          <div class="form-group">
-            <label for="date">التاريخ</label>
-            <input type="date" id="date" required>
-          </div>
-          <div class="form-group">
-            <label for="time">الوقت المفضل</label>
-            <input type="time" id="time" required>
-          </div>
-          <div class="form-group">
-            <label for="notes">ملاحظات إضافية (اختياري)</label>
-            <textarea id="notes" placeholder="مثال: ذكرى زواج، كرسي أطفال..."></textarea>
-          </div>
-          <button type="submit" class="btn">تأكيد الحجز</button>
-        </form>
-        <a href="admin.html" class="admin-link">🔐 الدخول إلى لوحة التحكم</a>
+    <!-- نموذج الحجز -->
+    <div id="booking-form" class="card">
+      <h1 class="form-title">📅 اختر موعد الحجز</h1>
+      
+      <div class="form-group">
+        <label>التاريخ المتاح</label>
+        <div class="dates-grid" id="dates-grid"></div>
       </div>
 
-      <div style="text-align: center; color: #7f8c8d; font-size: 0.9rem;">
-        ✅ يتم حفظ الحجز تلقائيًا في النظام
+      <div class="form-group">
+        <label>الوقت المتاح</label>
+        <div class="times-grid" id="times-grid"></div>
       </div>
-    </main>
+
+      <div class="form-group">
+        <label for="name">الاسم الكامل</label>
+        <input type="text" id="name" placeholder="مثال: أحمد محمد" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">رقم الجوال (يبدأ بـ 5)</label>
+        <input type="tel" id="phone" placeholder="5XXXXXXXX" maxlength="9" required>
+        <small style="color:#7f8c8d; font-size:0.85rem;">مثال: 501234567</small>
+      </div>
+      <div class="form-group">
+        <label for="guests">عدد الضيوف</label>
+        <input type="number" id="guests" min="1" max="20" value="2" required>
+      </div>
+      <div class="form-group">
+        <label for="notes">ملاحظات (اختياري)</label>
+        <textarea id="notes" placeholder="كرسي أطفال، ذكرى خاصة..."></textarea>
+      </div>
+      <button id="submit-btn" class="btn" disabled>تأكيد الحجز</button>
+      <a href="admin.html" class="admin-link">🔐 لوحة التحكم</a>
+    </div>
+
+    <!-- شاشة التأكيد -->
+    <div id="confirmation-screen" class="card">
+      <div class="confirmation-card">
+        <div class="confirmation-icon">🎉</div>
+        <h2>تم الحجز بنجاح!</h2>
+        <p style="color:#7f8c8d;">يرجى حفظ هذه المعلومات</p>
+        
+        <div class="booking-id" id="conf-id">—</div>
+        
+        <div style="text-align: left; margin: 1.5rem 0;">
+          <div class="summary-item">
+            <span class="summary-label">الاسم:</span>
+            <span class="summary-value" id="conf-name">—</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">التاريخ:</span>
+            <span class="summary-value" id="conf-date">—</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">الوقت:</span>
+            <span class="summary-value" id="conf-time">—</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">الضيوف:</span>
+            <span class="summary-value" id="conf-guests">—</span>
+          </div>
+        </div>
+
+        <div class="instructions">
+          📸 يُرجى تصوير هذه الشاشة وإبرازها لموظف الاستقبال عند الوصول
+        </div>
+
+        <button id="new-booking-btn" class="btn" style="margin-top:1.5rem; background:#7f8c8d;">
+          حجز جديد
+        </button>
+      </div>
+    </div>
   </div>
-
-  <div id="toast" class="toast"></div>
 
   <script>
     const firebaseConfig = {
@@ -177,47 +259,86 @@
       messagingSenderId: "1097720872360",
       appId: "1:1097720872360:web:b8d94656b7440b4353719d"
     };
-
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const db = firebase.database();
 
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.className = `toast ${type} show`;
-      setTimeout(() => toast.classList.remove('show'), 4000);
+    let selectedDate = null;
+    let selectedTime = null;
+
+    // توليد التواريخ (اليوم + 6 أيام)
+    function generateDates() {
+      const grid = document.getElementById('dates-grid');
+      grid.innerHTML = '';
+      const today = new Date();
+      const formatter = new Intl.DateTimeFormat('ar-SA', { weekday: 'short', day: 'numeric', month: 'short' });
+
+      for (let i = 0; i <= 6; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        const display = formatter.format(date);
+        const iso = date.toISOString().split('T')[0]; // YYYY-MM-DD
+
+        const div = document.createElement('div');
+        div.className = 'date-card';
+        div.innerHTML = `
+          <div class="date-day">${display.split(' ')[0]}</div>
+          <div class="date-date">${display.split(' ').slice(1).join(' ')}</div>
+        `;
+        div.dataset.date = iso;
+        div.addEventListener('click', () => selectDate(iso, div));
+        grid.appendChild(div);
+      }
     }
 
-    // تعيين التاريخ الافتراضي (غدًا)
-    document.addEventListener('DOMContentLoaded', () => {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const y = tomorrow.getFullYear();
-      const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-      const d = String(tomorrow.getDate()).padStart(2, '0');
-      document.getElementById('date').value = `${y}-${m}-${d}`;
-    });
+    function selectDate(iso, element) {
+      document.querySelectorAll('.date-card').forEach(el => el.classList.remove('selected'));
+      element.classList.add('selected');
+      selectedDate = iso;
+      generateTimes();
+      document.getElementById('submit-btn').disabled = !(selectedDate && selectedTime);
+    }
 
-    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    // الأوقات المتاحة (قابلة للتخصيص)
+    const AVAILABLE_TIMES = ['12:00', '13:00', '19:00', '20:00', '21:00'];
 
+    function generateTimes() {
+      const grid = document.getElementById('times-grid');
+      grid.innerHTML = '';
+      if (!selectedDate) return;
+
+      AVAILABLE_TIMES.forEach(time => {
+        const btn = document.createElement('button');
+        btn.className = 'time-btn';
+        btn.textContent = time;
+        btn.dataset.time = time;
+        btn.addEventListener('click', () => selectTime(time, btn));
+        // لاحقًا: تحقق من التوفر الحقيقي عبر Firebase
+        grid.appendChild(btn);
+      });
+    }
+
+    function selectTime(time, element) {
+      document.querySelectorAll('.time-btn').forEach(el => el.classList.remove('selected'));
+      element.classList.add('selected');
+      selectedTime = time;
+      document.getElementById('submit-btn').disabled = !(selectedDate && selectedTime);
+    }
+
+    // معالجة الحجز
+    document.getElementById('submit-btn').addEventListener('click', async () => {
       const name = document.getElementById('name').value.trim();
-      let phoneInput = document.getElementById('phone').value.trim();
+      const phoneInput = document.getElementById('phone').value.trim();
       const guests = document.getElementById('guests').value;
-      const dateInput = document.getElementById('date').value;
-      const time = document.getElementById('time').value;
-      const notes = document.getElementById('notes').value.trim() || "لا توجد ملاحظات";
+      const notes = document.getElementById('notes').value.trim() || "لا توجد";
 
-      // ✅ التحقق: يبدأ بـ 5 + 8 أرقام = 9 أرقام
       if (!/^5\d{8}$/.test(phoneInput)) {
-        showToast("❌ يرجى إدخال رقم جوال سعودي صحيح (يبدأ بـ 5، مثال: 501234567)", "error");
+        alert("❌ يرجى إدخال رقم جوال سعودي صحيح (يبدأ بـ 5، مثال: 501234567)");
         return;
       }
 
-      // ✅ تحويل إلى رقم دولي داخليًا: 9665XXXXXXXX
       const phoneFull = "966" + phoneInput;
-
-      const dateDisplay = new Date(dateInput).toLocaleDateString('ar-SA', {
+      const dateObj = new Date(selectedDate);
+      const dateDisplay = dateObj.toLocaleDateString('ar-SA', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -225,37 +346,56 @@
       });
 
       try {
-        const newRef = database.ref('bookings').push();
+        const newRef = db.ref('bookings').push();
         const bookingId = newRef.key;
 
         await newRef.set({
           id: bookingId,
           name,
-          phone: phoneFull,               // ⬅️ محفوظ كرقم دولي
-          phoneDisplay: phoneInput,       // ⬅️ للعرض فقط (5XXXXXXXX)
+          phone: phoneFull,
+          phoneDisplay: phoneInput,
           guests: parseInt(guests),
-          date: dateInput,
+          date: selectedDate,
+          time: selectedTime,
           dateDisplay,
-          time,
           notes,
           status: 'pending',
           timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        showToast("✅ تم حفظ الحجز بنجاح!", "success");
-        document.getElementById('bookingForm').reset();
-        // تعيين التاريخ مجددًا بعد الحفظ
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const y = tomorrow.getFullYear();
-        const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-        const d = String(tomorrow.getDate()).padStart(2, '0');
-        document.getElementById('date').value = `${y}-${m}-${d}`;
+        // إظهار شاشة التأكيد
+        document.getElementById('conf-id').textContent = bookingId;
+        document.getElementById('conf-name').textContent = name;
+        document.getElementById('conf-date').textContent = dateDisplay;
+        document.getElementById('conf-time').textContent = selectedTime;
+        document.getElementById('conf-guests').textContent = guests;
+
+        document.getElementById('booking-form').style.display = 'none';
+        document.getElementById('confirmation-screen').style.display = 'block';
+
       } catch (err) {
-        console.error("Firebase Error:", err);
-        showToast("❌ حدث خطأ. تحقق من الاتصال وحاول مجددًا.", "error");
+        console.error(err);
+        alert("❌ حدث خطأ. تحقق من الاتصال وحاول مجددًا.");
       }
     });
+
+    // حجز جديد
+    document.getElementById('new-booking-btn').addEventListener('click', () => {
+      document.getElementById('booking-form').style.display = 'block';
+      document.getElementById('confirmation-screen').style.display = 'none';
+      document.getElementById('name').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('guests').value = '2';
+      document.getElementById('notes').value = '';
+      document.querySelectorAll('.date-card, .time-btn').forEach(el => el.classList.remove('selected'));
+      selectedDate = null;
+      selectedTime = null;
+      document.getElementById('submit-btn').disabled = true;
+      generateDates();
+    });
+
+    // بدء التشغيل
+    generateDates();
   </script>
 </body>
 </html>
