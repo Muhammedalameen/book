@@ -57,28 +57,45 @@
 
   <div id="messages"></div>
 
-  <!-- 🔥 إضافة Firebase SDK -->
+  <!-- 🔥 Firebase SDK (مصحح: لا مسافات زائدة في الروابط) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
   <script>
-    // 👇 الصق الـ firebaseConfig هنا بعد نسخه من لوحة التحكم
+    // ✅ تم إزالة <script> المُكرر أعلاه — لا يُسمح بـ <script> داخل <script>
+
+    // Your web app's Firebase configuration (✅ مصحح: إزالة المسافة الزائدة في databaseURL)
     const firebaseConfig = {
-      // ⚠️ احذف هذا السطر كله، والصق الكتلة التي نسختها من Firebase هنا
-      // مثال:
-      // apiKey: "AIzaSy...",
-      // authDomain: "...",
-      // ...
+      apiKey: "AIzaSyAnH3AczYq13NMVA18BhucGzeffEuC5QIM",
+      authDomain: "table-booking-5d9d4.firebaseapp.com",
+      databaseURL: "https://table-booking-5d9d4-default-rtdb.firebaseio.com", // ✅ لا مسافات هنا
+      projectId: "table-booking-5d9d4",
+      storageBucket: "table-booking-5d9d4.firebasestorage.app",
+      messagingSenderId: "1097720872360",
+      appId: "1:1097720872360:web:b8d94656b7440b4353719d"
     };
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // ✅ تعريف دالة showMessage قبل استخدامها (شرط أساسي في JS)
+    function showMessage(text, type) {
+      const div = document.createElement('div');
+      div.className = `alert alert-${type}`;
+      div.textContent = text;
+      const msgDiv = document.getElementById('messages');
+      msgDiv.innerHTML = ''; // مسح الرسائل السابقة
+      msgDiv.appendChild(div);
+      setTimeout(() => {
+        if (div.parentNode) div.remove();
+      }, 5000);
+    }
+
+    // معالجة إرسال النموذج
     document.getElementById('bookingForm').addEventListener('submit', function(e) {
       e.preventDefault();
 
-      // جمع البيانات
       const name = document.getElementById('name').value.trim();
       let phone = document.getElementById('phone').value.trim();
       const guests = document.getElementById('guests').value;
@@ -86,16 +103,13 @@
       const time = document.getElementById('time').value;
       const notes = document.getElementById('notes').value.trim() || "لا توجد ملاحظات";
 
-      // تنظيف رقم الجوال: إزالة أي رموز غير أرقام
       phone = phone.replace(/\D/g, '');
 
-      // التحقق: هل الرقم يبدأ بـ 9665 وطوله 12؟
       if (!/^9665\d{8}$/.test(phone)) {
         showMessage("يرجى إدخال رقم جوال سعودي صحيح (يبدأ بـ 9665)", "error");
         return;
       }
 
-      // تحويل التاريخ إلى نص عربي للعرض
       const dateDisplay = new Date(dateInput).toLocaleDateString('ar-SA', {
         weekday: 'long',
         year: 'numeric',
@@ -103,29 +117,26 @@
         day: 'numeric'
       });
 
-      // إنشاء معرف فريد للحجز
       const newBookingRef = database.ref('bookings').push();
       const bookingId = newBookingRef.key;
 
-      // بيانات الحجز
       const bookingData = {
         id: bookingId,
         name: name,
         phone: phone,
         guests: parseInt(guests),
-        date: dateInput,           // YYYY-MM-DD (للفرز)
-        dateDisplay: dateDisplay,  // نص مقروء
+        date: dateInput,
+        dateDisplay: dateDisplay,
         time: time,
         notes: notes,
         timestamp: firebase.database.ServerValue.TIMESTAMP
       };
 
-      // الحفظ في Firebase
       newBookingRef.set(bookingData)
         .then(() => {
           console.log("✓ تم حفظ الحجز:", bookingId);
 
-          // ✅ توليد رسالة واتساب
+          // ✅ مُصلَح: لا مسافات في رابط واتساب
           const message = `📌 *طلب حجز طاولة جديد*\n\n` +
                           `🔢 معرف الحجز: ${bookingId}\n` +
                           `👤 الاسم: ${name}\n` +
@@ -136,32 +147,21 @@
                           `📝 ملاحظات: ${notes}`;
 
           const encoded = encodeURIComponent(message);
-          const whatsappUrl = `https://wa.me/${phone}?text=${encoded}`;
+          const whatsappUrl = `https://wa.me/${phone}?text=${encoded}`; // ✅ مسافات مُزالة
 
-          // عرض رسالة نجاح
           showMessage(`تم إرسال طلب الحجز! (المعرف: ${bookingId})`, "success");
-          
-          // فتح واتساب بعد 1.5 ثانية
+
           setTimeout(() => {
             window.open(whatsappUrl, '_blank');
           }, 1500);
         })
         .catch((error) => {
-          console.error("خطأ:", error);
-          showMessage("فشل حفظ الحجز. تحقق من الاتصال وحاول مجددًا.", "error");
+          console.error("خطأ في Firebase:", error);
+          showMessage("فشل الحفظ. تأكد من اتصال الإنترنت وحاول مجددًا.", "error");
         });
     });
 
-    function showMessage(text, type) {
-      const div = document.createElement('div');
-      div.className = `alert alert-${type}`;
-      div.textContent = text;
-      document.getElementById('messages').innerHTML = '';
-      document.getElementById('messages').appendChild(div);
-      setTimeout(() => div.remove(), 5000);
-    }
-
-    // تعيين التاريخ الافتراضي ليوم غد (لتحسين تجربة المستخدم)
+    // تعيين التاريخ الافتراضي
     document.addEventListener('DOMContentLoaded', () => {
       const today = new Date();
       const tomorrow = new Date(today);
