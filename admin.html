@@ -134,6 +134,8 @@
     .action-btn.print:hover { background: #2980b9; }
     .action-btn.whatsapp { background: #25D366; color: white; }
     .action-btn.whatsapp:hover { background: #1ebe56; }
+    .action-btn.edit { background: #f39c12; color: white; }
+    .action-btn.edit:hover { background: #e67e22; }
     .qr-code {
       font-family: 'Courier New', monospace;
       font-size: 10px;
@@ -552,11 +554,12 @@
             <td style="text-align:left;">
               <button class="action-btn print" data-id="${b.id}" title="عرض وطباعة الحجز">📄 عرض</button>
               <button class="action-btn whatsapp" data-phone="${b.phone}" title="مراسلة العميل">💬 واتساب</button>
+              <button class="action-btn edit" data-id="${b.id}" title="تعديل الحجز">✏️ تعديل</button>
             </td>
           </tr>`;
       }).join('');
 
-      // ربط أزرار العرض والواتساب
+      // ربط أزرار العرض والواتساب والتعديل
       document.querySelectorAll('.action-btn.print').forEach(btn => {
         btn.addEventListener('click', function() {
           const id = this.dataset.id;
@@ -572,6 +575,102 @@
             window.open(`https://wa.me/${phone}`, '_blank');
           }
         });
+      });
+
+      document.querySelectorAll('.action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const id = this.dataset.id;
+          const booking = allBookings.find(b => b.id === id);
+          if (booking) {
+            showEditModal(booking);
+          }
+        });
+      });
+    }
+
+    // ✅ نافذة تعديل الحجز
+    function showEditModal(booking) {
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+      `;
+      modal.innerHTML = `
+        <div style="background: white; border-radius: 12px; padding: 20px; width: 100%; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+          <h2 style="text-align:center; margin-bottom:1rem;">✏️ تعديل الحجز #${booking.referenceNumber}</h2>
+          <div style="display:grid; gap:12px; margin-bottom:1rem;">
+            <label>الاسم:</label>
+            <input type="text" id="edit-name" value="${booking.name || ''}" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
+            <label>رقم الجوال:</label>
+            <input type="text" id="edit-phone" value="${booking.phoneDisplay || ''}" style="padding:10px; border:1px solid #ddd; border-radius:8px;" placeholder="05XXXXXXXX">
+            <label>عدد الضيوف:</label>
+            <input type="number" id="edit-guests" value="${booking.guests || 2}" min="1" max="20" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
+            <label>الملاحظات:</label>
+            <textarea id="edit-notes" style="padding:10px; border:1px solid #ddd; border-radius:8px; height:80px;">${booking.notes || ''}</textarea>
+            <label>الحالة:</label>
+            <select id="edit-status" style="padding:10px; border:1px solid #ddd; border-radius:8px;">
+              <option value="pending" ${booking.status === 'pending' ? 'selected' : ''}>⏳ بانتظار</option>
+              <option value="confirmed" ${booking.status === 'confirmed' ? 'selected' : ''}>✅ مؤكّدة</option>
+              <option value="cancelled" ${booking.status === 'cancelled' ? 'selected' : ''}>❌ ملغاة</option>
+              <option value="completed" ${booking.status === 'completed' ? 'selected' : ''}>✔️ منتهية</option>
+            </select>
+          </div>
+          <div style="display:flex; justify-content:space-between; gap:10px;">
+            <button id="save-edit-btn" style="flex:1; padding:10px; background:#2c3e50; color:white; border:none; border-radius:8px; cursor:pointer;">
+              حفظ التعديلات
+            </button>
+            <button id="cancel-edit-btn" style="flex:1; padding:10px; background:#7f8c8d; color:white; border:none; border-radius:8px; cursor:pointer;">
+              إلغاء
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+
+      document.getElementById('save-edit-btn').addEventListener('click', async () => {
+        const name = document.getElementById('edit-name').value.trim();
+        const phoneDisplay = document.getElementById('edit-phone').value.trim();
+        const guests = document.getElementById('edit-guests').value;
+        const notes = document.getElementById('edit-notes').value.trim();
+        const status = document.getElementById('edit-status').value;
+
+        if (!name || !phoneDisplay || !/^05\d{8}$/.test(phoneDisplay)) {
+          alert("يرجى ملء الحقول الأساسية صحيحة.");
+          return;
+        }
+
+        const phoneFull = "966" + phoneDisplay.substring(1);
+
+        try {
+          await db.ref(`bookings/${booking.id}`).update({
+            name,
+            phone: phoneFull,
+            phoneDisplay,
+            guests: parseInt(guests),
+            notes,
+            status
+          });
+
+          document.body.removeChild(modal);
+          renderTable(allBookings); // تحديث الجدول
+          renderStats(); // تحديث العدادات
+        } catch (err) {
+          console.error(err);
+          alert("❌ فشل تعديل الحجز. تحقق من الاتصال.");
+        }
       });
     }
 
