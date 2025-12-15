@@ -299,7 +299,7 @@
     }
 
     // الأوقات المتاحة (قابلة للتخصيص)
-    const AVAILABLE_TIMES = ['12:00', '13:00', '19:00', '20:00', '21:00'];
+    unction generateTimeSlots() {   const times = [];   // من الساعة 13:00 إلى 23:30 (11 ساعة × 2 = 22 فترة)   for (let h = 13; h <= 23; h++) {     times.push(`${String(h).padStart(2, '0')}:00`);     times.push(`${String(h).padStart(2, '0')}:30`);   }   // إضافة منتصف الليل وساعة الفجر   times.push('00:00', '00:30', '01:00');   return times; } const AVAILABLE_TIMES = generateTimeSlots(); // 24 فترة
 
     function generateTimes() {
       const grid = document.getElementById('times-grid');
