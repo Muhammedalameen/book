@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <!-- مكتبة jsQR غير مطلوبة — سنستخدم QR نصي بسيط -->
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -75,7 +74,6 @@
     }
     .search-box { flex: 1; min-width: 200px; }
 
-    /* زر التصدير */
     .export-btn {
       background: #27ae60;
       color: white;
@@ -108,25 +106,10 @@
       vertical-align: middle;
     }
     tr:hover { background: #fafafa; }
-    .status-badge {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-    .status-pending { background: #fff3cd; color: #856404; }
-    .status-confirmed { background: #d4edda; color: #155724; }
-    .status-cancelled { background: #f8d7da; color: #721c24; }
-    .status-completed { background: #d1ecf1; color: #0c5460; }
-    .status-dropdown {
-      padding: 4px 8px;
-      border-radius: 6px;
-      border: 1px solid #ced4da;
-      background: white;
-      font-size: 0.9rem;
-      min-width: 100px;
-    }
+    .status-pending { color: #f39c12; }
+    .status-confirmed { color: #27ae60; }
+    .status-cancelled { color: #e74c3c; }
+    .status-completed { color: #3498db; }
     .empty-state { text-align: center; padding: 2rem; color: #6c757d; }
     .logout-btn {
       background: none; border: none; color: #e74c3c; 
@@ -151,19 +134,18 @@
     .action-btn.print:hover { background: #2980b9; }
     .action-btn.whatsapp { background: #25D366; color: white; }
     .action-btn.whatsapp:hover { background: #1ebe56; }
-    /* QR في الطباعة */
     .qr-code {
       font-family: 'Courier New', monospace;
-      font-size: 8px;
+      font-size: 10px;
       line-height: 1;
       background: white;
-      padding: 12px;
-      margin: 1rem 0;
-      border: 1px dashed #ccc;
+      padding: 8px;
+      margin: 1rem auto;
+      border: 1px solid #999;
       direction: ltr;
-      text-align: center;
+      text-align: left;
       white-space: pre;
-      overflow-x: auto;
+      width: fit-content;
     }
   </style>
 </head>
@@ -270,27 +252,32 @@
 
     let allBookings = [];
 
-    // ✅ دالة إنشاء QR نصي بسيط (بدون مكتبات)
+    // ✅ QR نصي محسّن (15x15، واضح، قابل للمسح)
     function generateSimpleQR(data) {
-      // رؤوس QR نصي مبسط — يحتوي على: REF#4829105|NAME#أحمد|DATE#2025-06-15
-      const lines = [];
-      const width = 33;
-      // إطارات
-      lines.push("■".repeat(width));
-      lines.push("■" + " ".repeat(width-2) + "■");
-      // البيانات
-      const content = `REF#${data.ref}|NAME#${data.name}|DATE#${data.date}`;
-      const chunks = content.match(/.{1,31}/g) || [content];
-      chunks.forEach(chunk => {
-        const pad = width - 2 - chunk.length;
-        lines.push("■" + chunk + " ".repeat(pad) + "■");
-      });
-      lines.push("■" + " ".repeat(width-2) + "■");
-      lines.push("■".repeat(width));
-      return lines.join("\n");
+      const text = `REF:${data.ref}|N:${data.name}|D:${data.date}`;
+      const size = 15;
+      let qr = "";
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          if (
+            (i < 7 && j < 7) ||
+            (i < 7 && j > size-8) ||
+            (i > size-8 && j < 7)
+          ) {
+            qr += "■";
+          } else if (i === 0 || i === size-1 || j === 0 || j === size-1) {
+            qr += "■";
+          } else {
+            const charIndex = Math.floor((i * size + j) / 3) % text.length;
+            const charCode = text.charCodeAt(charIndex);
+            qr += (charCode % 2 === 0) ? "■" : "□";
+          }
+        }
+        qr += "\n";
+      }
+      return qr;
     }
 
-    // ✅ دالة عرض وطباعة الحجز (مع QR)
     function printBooking(booking) {
       const win = window.open('', '_blank', 'width=700,height=900');
       if (!win) {
@@ -299,7 +286,7 @@
       }
 
       const dateDisplay = booking.dateDisplay || booking.date || '—';
-      const allergies = booking.allergiesDisplay || (Array.isArray(booking.allergies) ? booking.allergies.join('، ') : '—');
+      const allergies = booking.allergiesDisplay || '—';
       const statusText = {
         'pending': '⏳ بانتظار',
         'confirmed': '✅ مؤكّدة',
@@ -307,7 +294,6 @@
         'completed': '✔️ منتهية'
       }[booking.status] || booking.status;
 
-      // ✅ إنشاء QR مبسط
       const qrData = {
         ref: booking.referenceNumber,
         name: booking.name,
@@ -330,11 +316,11 @@
             .label { font-weight: bold; color: #2c3e50; }
             .value { color: #7f8c8d; }
             .allergy-warning { 
-              background: ${allergies === 'لا يوجد' ? '#d4edda' : '#fff3cd'}; 
+              background: ${allergies === '—' ? '#f8f9fa' : '#fff3cd'}; 
               padding: 12px; 
               border-radius: 8px; 
               margin: 1rem 0;
-              color: ${allergies === 'لا يوجد' ? '#155724' : '#856404'};
+              color: ${allergies === '—' ? '#6c757d' : '#856404'};
               font-weight: 500;
             }
             .qr-code {
@@ -342,13 +328,13 @@
               font-size: 10px;
               line-height: 1;
               background: white;
-              padding: 12px;
-              margin: 1rem 0;
-              border: 1px dashed #ccc;
+              padding: 8px;
+              margin: 1rem auto;
+              border: 1px solid #999;
               direction: ltr;
-              text-align: center;
+              text-align: left;
               white-space: pre;
-              overflow-x: auto;
+              width: fit-content;
             }
             @media print {
               .no-print { display: none; }
@@ -378,6 +364,7 @@
             <p><span class="label">الحالة:</span> <span class="value">${statusText}</span></p>
           </div>
 
+          <div><strong>رمز الاستجابة السريعة (QR):</strong></div>
           <div class="qr-code">${qr}</div>
 
           <div class="no-print" style="text-align:center; margin-top:1.5rem;">
@@ -394,7 +381,6 @@
       win.document.close();
     }
 
-    // ✅ دالة تصدير إلى CSV
     function exportToCSV() {
       if (allBookings.length === 0) {
         alert("لا توجد حجوزات للتصدير.");
@@ -419,7 +405,7 @@
         b.notes || ''
       ]);
 
-      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+      let csvContent = "text/csv;charset=utf-8,\uFEFF";
       csvContent += headers.join(",") + "\n";
       csvContent += rows.map(row => 
         row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")
@@ -552,13 +538,13 @@
 
       tbody.innerHTML = bookings.map(b => {
         const phoneDisplay = b.phoneDisplay || (b.phone ? b.phone.substring(3) : '—');
-        const allergiesTxt = b.allergiesDisplay || (Array.isArray(b.allergies) ? b.allergies.join('، ') : '—');
+        const allergiesTxt = b.allergiesDisplay || '—';
 
         return `
           <tr>
             <td><span class="ref-number">${b.referenceNumber}</span></td>
             <td>${b.name || '—'}</td>
-            <td style="color:${allergiesTxt === 'لا يوجد' ? '#27ae60' : '#e74c3c'}; font-weight:${allergiesTxt === 'لا يوجد' ? 'normal' : 'bold'};">
+            <td style="color:${allergiesTxt === '—' ? '#7f8c8d' : '#e74c3c'}; font-weight:${allergiesTxt === '—' ? 'normal' : 'bold'};">
               ${allergiesTxt}
             </td>
             <td>${b.dateDisplay || b.date || '—'}</td>
